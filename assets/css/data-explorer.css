@@ -1,0 +1,93 @@
+.aps-data-explorer {
+	margin-top: 20px;
+}
+
+.aps-explorer-form {
+	background: #fff;
+	padding: 20px;
+	border: 1px solid #ccd0d4;
+	border-radius: 4px;
+	margin-bottom: 20px;
+}
+
+.aps-explorer-response {
+	background: #fff;
+	padding: 20px;
+	border: 1px solid #ccd0d4;
+	border-radius: 4px;
+}
+
+.aps-explorer-response pre {
+	background: #f5f5f5;
+	padding: 15px;
+	border-radius: 4px;
+	overflow-x: auto;
+	max-height: 600px;
+	overflow-y: auto;
+	font-size: 12px;
+	line-height: 1.5;
+}
+
+#aps-resource-id2-row {
+	display: none;
+}
+
+.aps-team-bundle {
+	display: flex;
+	align-items: center;
+	gap: 10px;
+	margin-bottom: 10px;
+}
+
+.aps-team-bundle-response {
+	margin-top: 15px;
+}
+
+.aps-bundle-section {
+	margin-top: 15px;
+}
+
+.aps-bundle-section pre {
+	background: #f5f5f5;
+	padding: 12px;
+	border-radius: 4px;
+	max-height: 300px;
+	overflow: auto;
+}
+
+.aps-widget-panel {
+	margin-top: 20px;
+}
+
+.aps-widget-grid {
+	display: grid;
+	grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+	gap: 16px;
+}
+
+.aps-widget-card {
+	border: 1px solid #ccd0d4;
+	border-radius: 4px;
+	padding: 12px;
+	background: #fff;
+}
+
+.aps-widget-card label {
+	display: block;
+	margin-top: 8px;
+}
+
+.aps-widget-card input {
+	width: 100%;
+}
+
+.aps-widget-response {
+	margin-top: 10px;
+	background: #f5f5f5;
+	padding: 10px;
+	border-radius: 4px;
+	max-height: 220px;
+	overflow: auto;
+	font-size: 12px;
+}
+

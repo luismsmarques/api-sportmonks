@@ -1,0 +1,32 @@
+.aps-widget {
+	border: 1px solid #e5e5e5;
+	padding: 16px;
+	margin: 16px 0;
+	background: #fff;
+}
+
+.aps-widget h3 {
+	margin-top: 0;
+}
+
+.aps-widget ul {
+	margin: 0;
+	padding-left: 16px;
+}
+
+.aps-next-game .aps-countdown {
+	font-weight: 600;
+	margin-top: 8px;
+}
+
+.aps-standings table {
+	width: 100%;
+	border-collapse: collapse;
+}
+
+.aps-standings th,
+.aps-standings td {
+	border-bottom: 1px solid #eee;
+	padding: 6px 8px;
+	text-align: left;
+}

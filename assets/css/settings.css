@@ -1,0 +1,71 @@
+.aps-team-item {
+	margin-bottom: 20px;
+	padding: 15px;
+	background: #fff;
+	border: 1px solid #ccd0d4;
+	border-radius: 4px;
+}
+
+.aps-team-item table.form-table {
+	margin-top: 0;
+}
+
+.aps-team-item hr {
+	margin: 15px 0 0;
+	border: none;
+	border-top: 1px solid #ddd;
+}
+
+#aps-teams-list {
+	margin-bottom: 20px;
+}
+
+#aps-add-team {
+	margin-bottom: 20px;
+}
+
+.aps-team-search {
+	margin: 10px 0 20px;
+}
+
+.aps-team-search-controls {
+	display: flex;
+	gap: 8px;
+	align-items: center;
+	margin-top: 6px;
+}
+
+.aps-team-search-results {
+	margin-top: 10px;
+}
+
+.aps-category-select {
+	min-width: 200px;
+}
+
+.aps-team-results {
+	list-style: none;
+	margin: 0;
+	padding: 0;
+	border: 1px solid #ccd0d4;
+	background: #fff;
+}
+
+.aps-team-results li {
+	display: flex;
+	align-items: center;
+	gap: 10px;
+	padding: 8px 10px;
+	border-bottom: 1px solid #eee;
+}
+
+.aps-team-results li:last-child {
+	border-bottom: none;
+}
+
+.aps-team-result-logo {
+	width: 24px;
+	height: 24px;
+	object-fit: contain;
+}
+
