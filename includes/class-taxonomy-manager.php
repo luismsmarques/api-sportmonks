@@ -170,9 +170,37 @@ class APS_Taxonomy_Manager {
 		if ( isset( $_POST['aps_team_id'] ) ) {
 			$team_id = absint( $_POST['aps_team_id'] );
 			update_term_meta( $term_id, 'aps_team_id', $team_id );
-			
+
 			// Update mapping
 			$this->update_team_mapping( $team_id, $term_id );
+
+			// Fetch and save team logo URL to category term meta
+			$this->update_category_team_logo( $term_id, $team_id );
+		}
+	}
+
+	/**
+	 * Fetch team logo URL from API and save to category term meta (aps_team_logo).
+	 *
+	 * @param int $term_id  Category term ID.
+	 * @param int $team_id  Sportmonks team ID.
+	 */
+	public function update_category_team_logo( $term_id, $team_id ) {
+		if ( ! $term_id || ! $team_id ) {
+			return;
+		}
+
+		$api_client = APS_API_Client::get_instance();
+		$response = $api_client->get_team( $team_id, array(), false );
+
+		if ( is_wp_error( $response ) ) {
+			return;
+		}
+
+		$data = $response['data'] ?? $response;
+		$image_path = isset( $data['image_path'] ) ? $data['image_path'] : '';
+		if ( is_string( $image_path ) && $image_path !== '' ) {
+			update_term_meta( $term_id, 'aps_team_logo', esc_url_raw( $image_path ) );
 		}
 	}
 	

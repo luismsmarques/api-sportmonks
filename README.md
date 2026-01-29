@@ -55,6 +55,12 @@ O plugin permite ligar:
 
 Quando sincronizar jogos, o plugin automaticamente associa os posts do CPT "aps_jogo" com as taxonomias corretas baseado nos mapeamentos.
 
+### Jogos eliminados na API (manter DB em sincronia)
+
+A Sportmonks pode remover jogos da API (ex.: por razões técnicas). O plugin usa o filtro `deleted` da API ([How to keep your database in SYNC](https://docs.sportmonks.com/)): em cada sincronização, pede os jogos eliminados por data e envia para o lixo os posts correspondentes. Assim a base de dados fica alinhada com a API.
+
+Em **Configurações** podes ativar/desativar **Sincronizar jogos eliminados (API)** e definir **Dias a verificar** (por defeito 90).
+
 ## Uso
 
 ### Sincronização Manual

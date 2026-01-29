@@ -54,12 +54,13 @@ class APS_Sync_Manager {
 		$sync_injuries = (bool) get_option( 'aps_smonks_sync_injuries', true );
 		$sync_transfers = (bool) get_option( 'aps_smonks_sync_transfers', true );
 		$results = array(
-			'success' => 0,
-			'error'   => 0,
-			'updated' => 0,
-			'created' => 0,
-			'squads'  => 0,
-			'injuries' => 0,
+			'success'   => 0,
+			'error'     => 0,
+			'updated'   => 0,
+			'created'   => 0,
+			'trashed'   => 0,
+			'squads'    => 0,
+			'injuries'  => 0,
 			'transfers' => 0,
 		);
 		$metrics = array(
@@ -178,12 +179,71 @@ class APS_Sync_Manager {
 				$results['error']++;
 			}
 		}
-		
+
+		// Sync deleted fixtures (API filter=deleted) so DB stays in sync when Sportmonks removes fixtures
+		if ( (bool) get_option( 'aps_smonks_sync_deleted', true ) ) {
+			$trashed = $this->sync_deleted_fixtures( $api_client );
+			$results['trashed'] = $trashed;
+		}
+
 		update_option( 'aps_smonks_last_sync', current_time( 'mysql' ) );
 		update_option( 'aps_smonks_last_sync_results', $results );
 		$metrics['duration_seconds'] = round( microtime( true ) - $start_time, 2 );
 		update_option( 'aps_smonks_last_sync_metrics', $metrics );
 		return $results;
+	}
+
+	/**
+	 * Sync deleted fixtures: fetch fixtures removed from API (filters=deleted) and trash matching posts.
+	 * See Sportmonks guide "How to keep your database in SYNC".
+	 *
+	 * @param APS_API_Client $api_client API client
+	 * @return int Number of posts trashed
+	 */
+	private function sync_deleted_fixtures( $api_client ) {
+		$days = absint( get_option( 'aps_smonks_sync_deleted_days', 90 ) );
+		$days = $days > 0 ? min( $days, 365 ) : 90;
+		$start = strtotime( "-{$days} days", time() );
+		$end = time();
+		$trashed = 0;
+
+		for ( $ts = $start; $ts <= $end; $ts += DAY_IN_SECONDS ) {
+			$date = gmdate( 'Y-m-d', $ts );
+			$response = $api_client->get_fixtures_by_date(
+				$date,
+				array( 'filters' => array( 'deleted' ) ),
+				array( 'state' ),
+				false
+			);
+
+			if ( is_wp_error( $response ) ) {
+				continue;
+			}
+
+			$data = $response['data'] ?? $response;
+			if ( ! is_array( $data ) ) {
+				continue;
+			}
+			// API may return single fixture or list; ensure we iterate
+			if ( isset( $data['id'] ) ) {
+				$data = array( $data );
+			}
+
+			foreach ( $data as $fixture ) {
+				$match_id = isset( $fixture['id'] ) ? absint( $fixture['id'] ) : 0;
+				if ( ! $match_id ) {
+					continue;
+				}
+
+				$post = $this->find_post_by_match_id( $match_id );
+				if ( $post && $post->post_status !== 'trash' ) {
+					wp_trash_post( $post->ID );
+					$trashed++;
+				}
+			}
+		}
+
+		return $trashed;
 	}
 
 	/**
@@ -867,14 +927,18 @@ class APS_Sync_Manager {
 		
 		$results = $this->sync_teams_fixtures();
 		
+		$msg = sprintf(
+			__( 'Sincronização concluída: %d sucesso, %d erros, %d criados, %d atualizados', 'api-sportmonks' ),
+			$results['success'],
+			$results['error'],
+			$results['created'],
+			$results['updated']
+		);
+		if ( ! empty( $results['trashed'] ) ) {
+			$msg .= ' ' . sprintf( _n( '%d jogo removido (API).', '%d jogos removidos (API).', $results['trashed'], 'api-sportmonks' ), $results['trashed'] );
+		}
 		wp_send_json_success( array(
-			'message' => sprintf(
-				__( 'Sincronização concluída: %d sucesso, %d erros, %d criados, %d atualizados', 'api-sportmonks' ),
-				$results['success'],
-				$results['error'],
-				$results['created'],
-				$results['updated']
-			),
+			'message' => $msg,
 			'results' => $results,
 		) );
 	}

@@ -132,6 +132,16 @@ class APS_Settings {
 			'sanitize_callback' => 'absint',
 			'default'           => 21600,
 		) );
+
+		register_setting( 'aps_smonks_settings', 'aps_smonks_sync_deleted', array(
+			'sanitize_callback' => array( $this, 'sanitize_checkbox' ),
+			'default'           => 1,
+		) );
+
+		register_setting( 'aps_smonks_settings', 'aps_smonks_sync_deleted_days', array(
+			'sanitize_callback' => 'absint',
+			'default'           => 90,
+		) );
 	}
 	
 	/**
@@ -222,6 +232,8 @@ class APS_Settings {
 			update_option( 'aps_smonks_sync_squads', $this->sanitize_checkbox( $_POST['aps_smonks_sync_squads'] ?? 0 ) );
 			update_option( 'aps_smonks_sync_injuries', $this->sanitize_checkbox( $_POST['aps_smonks_sync_injuries'] ?? 0 ) );
 			update_option( 'aps_smonks_sync_transfers', $this->sanitize_checkbox( $_POST['aps_smonks_sync_transfers'] ?? 0 ) );
+			update_option( 'aps_smonks_sync_deleted', $this->sanitize_checkbox( $_POST['aps_smonks_sync_deleted'] ?? 1 ) );
+			update_option( 'aps_smonks_sync_deleted_days', min( 365, max( 1, absint( $_POST['aps_smonks_sync_deleted_days'] ?? 90 ) ) ) );
 			update_option( 'aps_smonks_cache_ttl_squads', absint( $_POST['aps_smonks_cache_ttl_squads'] ?? 21600 ) );
 			update_option( 'aps_smonks_cache_ttl_injuries', absint( $_POST['aps_smonks_cache_ttl_injuries'] ?? 1800 ) );
 			update_option( 'aps_smonks_cache_ttl_transfers', absint( $_POST['aps_smonks_cache_ttl_transfers'] ?? 21600 ) );
@@ -240,8 +252,10 @@ class APS_Settings {
 				$category_id = absint( $team_post['category_id'] ?? 0 );
 
 				if ( $team_id && $category_id ) {
+					$taxonomy_manager = APS_Taxonomy_Manager::get_instance();
 					update_term_meta( $category_id, 'aps_team_id', $team_id );
-					APS_Taxonomy_Manager::get_instance()->update_team_mapping( $team_id, $category_id );
+					$taxonomy_manager->update_team_mapping( $team_id, $category_id );
+					$taxonomy_manager->update_category_team_logo( $category_id, $team_id );
 				}
 			}
 			}
@@ -261,6 +275,8 @@ class APS_Settings {
 		$sync_squads = (int) get_option( 'aps_smonks_sync_squads', 1 );
 		$sync_injuries = (int) get_option( 'aps_smonks_sync_injuries', 1 );
 		$sync_transfers = (int) get_option( 'aps_smonks_sync_transfers', 1 );
+		$sync_deleted = (int) get_option( 'aps_smonks_sync_deleted', 1 );
+		$sync_deleted_days = (int) get_option( 'aps_smonks_sync_deleted_days', 90 );
 		$ttl_squads = (int) get_option( 'aps_smonks_cache_ttl_squads', 21600 );
 		$ttl_injuries = (int) get_option( 'aps_smonks_cache_ttl_injuries', 1800 );
 		$ttl_transfers = (int) get_option( 'aps_smonks_cache_ttl_transfers', 21600 );
@@ -333,6 +349,24 @@ class APS_Settings {
 								<input type="checkbox" name="aps_smonks_sync_transfers" value="1" <?php checked( $sync_transfers, 1 ); ?> />
 								<?php _e( 'Ativo', 'api-sportmonks' ); ?>
 							</label>
+						</td>
+					</tr>
+					<tr>
+						<th scope="row"><?php _e( 'Sincronizar jogos eliminados (API)', 'api-sportmonks' ); ?></th>
+						<td>
+							<label>
+								<input type="checkbox" name="aps_smonks_sync_deleted" value="1" <?php checked( $sync_deleted, 1 ); ?> />
+								<?php _e( 'Ativo', 'api-sportmonks' ); ?>
+							</label>
+							<p class="description">
+								<?php _e( 'Usa o filtro <code>deleted</code> da API para enviar para o lixo os jogos que a Sportmonks removeu, mantendo a base de dados em sincronia.', 'api-sportmonks' ); ?>
+							</p>
+							<p>
+								<label>
+									<?php _e( 'Dias a verificar (eliminados):', 'api-sportmonks' ); ?>
+									<input type="number" name="aps_smonks_sync_deleted_days" value="<?php echo esc_attr( $sync_deleted_days ); ?>" class="small-text" min="1" max="365" />
+								</label>
+							</p>
 						</td>
 					</tr>
 				</table>

@@ -192,6 +192,13 @@ if ( $category ) {
 
 // Mapa completo (team_id => term_id)
 $mapping = aps_get_team_category_mapping();
+
+// URL do logo da equipa (guardado na meta da categoria ao associar equipa nas Configurações)
+$term_id = $mapping[652] ?? 0;
+if ( $term_id ) {
+    $logo_url = get_term_meta( $term_id, 'aps_team_logo', true );
+    // usar $logo_url no front end (ex.: <img src="<?php echo esc_url( $logo_url ); ?>" />)
+}
 ```
 
 ## Estrutura dos dados
