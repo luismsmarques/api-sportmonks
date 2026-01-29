@@ -96,14 +96,8 @@ class APS_Theme_Helpers {
 			'scores',
 			'state',
 			'events',
-			'lineups',
 			'statistics',
-			'venue',
-			'referee',
-			'statistics.periods',
 			'events.type',
-			'lineups.player',
-			'lineups.position',
 		);
 		
 		$api_client = APS_API_Client::get_instance();

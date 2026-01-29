@@ -71,6 +71,7 @@ class APS_Sportmonks {
 		require_once APS_SMONKS_PLUGIN_DIR . 'includes/class-data-explorer.php';
 		require_once APS_SMONKS_PLUGIN_DIR . 'includes/class-theme-helpers.php';
 		require_once APS_SMONKS_PLUGIN_DIR . 'includes/class-shortcodes.php';
+		require_once APS_SMONKS_PLUGIN_DIR . 'includes/class-components.php';
 	}
 	
 	/**
@@ -81,7 +82,7 @@ class APS_Sportmonks {
 		register_deactivation_hook( __FILE__, array( $this, 'deactivate' ) );
 		
 		add_action( 'plugins_loaded', array( $this, 'load_textdomain' ) );
-		add_action( 'init', array( $this, 'init' ) );
+		add_action( 'plugins_loaded', array( $this, 'init' ), 20 );
 	}
 	
 	/**
@@ -90,6 +91,10 @@ class APS_Sportmonks {
 	public function activate() {
 		// Create error log table
 		APS_Error_Logger::create_table();
+
+		// Ensure CPTs and taxonomies are registered before flushing
+		APS_Taxonomy_Manager::get_instance()->register_taxonomy();
+		APS_CPT_Jogo::get_instance()->register_post_type();
 		
 		// Flush rewrite rules
 		flush_rewrite_rules();
@@ -130,6 +135,7 @@ class APS_Sportmonks {
 		APS_Data_Explorer::get_instance();
 		APS_Theme_Helpers::get_instance();
 		APS_Shortcodes::get_instance();
+		APS_Components::get_instance();
 	}
 }
 

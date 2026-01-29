@@ -88,6 +88,15 @@ class APS_API_Client {
 		
 		// Add API token
 		$params['api_token'] = $this->api_token;
+
+		// Normalize params
+		if ( isset( $params['filters'] ) && is_array( $params['filters'] ) ) {
+			$params['filters'] = implode( ';', $params['filters'] );
+		}
+
+		if ( isset( $params['select'] ) && is_array( $params['select'] ) ) {
+			$params['select'] = implode( ',', $params['select'] );
+		}
 		
 		// Add includes if provided
 		if ( ! empty( $includes ) ) {
@@ -108,6 +117,16 @@ class APS_API_Client {
 		$query_string = http_build_query( $params );
 		$full_url = $url . '?' . $query_string;
 		
+		// Prepare safe logging values (mask token)
+		$safe_params = $params;
+		if ( isset( $safe_params['api_token'] ) ) {
+			$safe_params['api_token'] = '***';
+		}
+		$safe_url = $full_url;
+		if ( ! empty( $this->api_token ) ) {
+			$safe_url = str_replace( $this->api_token, '***', $safe_url );
+		}
+
 		// Make request
 		$response = wp_remote_get( $full_url, array(
 			'timeout' => 30,
@@ -123,9 +142,9 @@ class APS_API_Client {
 				'API_ERROR',
 				$response->get_error_message(),
 				$response->get_error_code(),
-				array( 'endpoint' => $endpoint, 'url' => $full_url ),
+				array( 'endpoint' => $endpoint, 'url' => $safe_url ),
 				'',
-				array( 'url' => $full_url, 'params' => $params )
+				array( 'url' => $safe_url, 'params' => $safe_params )
 			);
 			return $response;
 		}
@@ -140,9 +159,9 @@ class APS_API_Client {
 				'API_ERROR',
 				$error_message,
 				(string) $status_code,
-				array( 'endpoint' => $endpoint, 'url' => $full_url ),
+				array( 'endpoint' => $endpoint, 'url' => $safe_url ),
 				'',
-				array( 'url' => $full_url, 'params' => $params, 'response' => $body )
+				array( 'url' => $safe_url, 'params' => $safe_params, 'response' => $body )
 			);
 			return new WP_Error( 'api_error', $error_message, array( 'status' => $status_code ) );
 		}
@@ -208,6 +227,30 @@ class APS_API_Client {
 	public function get_fixtures( $team_id, $params = array(), $includes = array(), $use_cache = true ) {
 		$default_includes = array( 'participants', 'scores', 'state' );
 		$includes = array_merge( $default_includes, $includes );
+
+		// #region agent log
+		@file_put_contents(
+			'/Users/LuisMarques_1/Local Sites/super-portistas/app/public/wp-content/plugins/api-sportmonks/.cursor/debug.log',
+			wp_json_encode(
+				array(
+					'sessionId' => 'debug-session',
+					'runId' => 'pre-fix',
+					'hypothesisId' => 'H1',
+					'location' => 'class-api-client.php:get_fixtures',
+					'message' => 'get_fixtures params/includes',
+					'data' => array(
+						'team_id' => (int) $team_id,
+						'params_keys' => array_keys( $params ),
+						'filters' => $params['filters'] ?? null,
+						'includes' => $includes,
+						'use_cache' => (bool) $use_cache,
+					),
+					'timestamp' => round( microtime( true ) * 1000 ),
+				)
+			) . PHP_EOL,
+			FILE_APPEND
+		);
+		// #endregion
 		
 		$date_range = $this->get_team_active_season_dates( $team_id );
 		$start_date = $date_range['start'] ?? gmdate( 'Y-m-d', strtotime( '-90 days' ) );
@@ -231,10 +274,7 @@ class APS_API_Client {
 			'scores',
 			'state',
 			'events',
-			'lineups',
 			'statistics',
-			'venue',
-			'referee',
 		);
 		$includes = array_merge( $default_includes, $includes );
 		

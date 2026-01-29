@@ -47,14 +47,6 @@ class APS_Error_Logger {
 	 * Add admin menu
 	 */
 	public function add_admin_menu() {
-		add_submenu_page(
-			'aps-sportmonks',
-			__( 'Error Log', 'api-sportmonks' ),
-			__( 'Error Log', 'api-sportmonks' ),
-			'manage_options',
-			'aps-error-log',
-			array( $this, 'render_page' )
-		);
 	}
 	
 	/**

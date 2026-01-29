@@ -200,5 +200,45 @@ jQuery(document).ready(function($) {
 			}
 		});
 	});
+
+	// Manual sync by date range
+	$('#aps-manual-sync-range').on('click', function() {
+		var $button = $(this);
+		var $status = $('#aps-sync-range-status');
+		var dateFrom = $('#aps-sync-date-from').val();
+		var dateTo = $('#aps-sync-date-to').val();
+
+		if (!dateFrom || !dateTo) {
+			$status.html('<span style="color: red;">' + apsSettings.i18n.error + ' ' + apsSettings.i18n.dateRequired + '</span>');
+			return;
+		}
+
+		$button.prop('disabled', true);
+		$status.html(apsSettings.i18n.searching);
+
+		$.ajax({
+			url: apsSettings.ajaxUrl,
+			type: 'POST',
+			data: {
+				action: 'aps_manual_sync_range',
+				nonce: apsSettings.nonce,
+				date_from: dateFrom,
+				date_to: dateTo
+			},
+			success: function(response) {
+				if (response.success) {
+					$status.html('<span style="color: green;">' + response.data.message + '</span>');
+				} else {
+					$status.html('<span style="color: red;">' + apsSettings.i18n.error + ' ' + (response.data.message || 'Erro desconhecido') + '</span>');
+				}
+			},
+			error: function() {
+				$status.html('<span style="color: red;">' + apsSettings.i18n.error + ' ' + apsSettings.i18n.requestFailed + '</span>');
+			},
+			complete: function() {
+				$button.prop('disabled', false);
+			}
+		});
+	});
 });
 

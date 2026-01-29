@@ -65,6 +65,24 @@ class APS_Settings {
 			'aps-sportmonks',
 			array( $this, 'render_settings_page' )
 		);
+
+		add_submenu_page(
+			'aps-sportmonks',
+			__( 'Gestão de Sync', 'api-sportmonks' ),
+			__( 'Gestão de Sync', 'api-sportmonks' ),
+			'manage_options',
+			'aps-sync-manager',
+			array( $this, 'render_sync_page' )
+		);
+
+		add_submenu_page(
+			'aps-sportmonks',
+			__( 'Erros do Plugin', 'api-sportmonks' ),
+			__( 'Erros do Plugin', 'api-sportmonks' ),
+			'manage_options',
+			'aps-error-log',
+			array( APS_Error_Logger::get_instance(), 'render_page' )
+		);
 	}
 	
 	/**
@@ -156,7 +174,12 @@ class APS_Settings {
 	 * @param string $hook Current admin page
 	 */
 	public function enqueue_scripts( $hook ) {
-		if ( 'toplevel_page_aps-sportmonks' !== $hook ) {
+		$allowed_hooks = array(
+			'toplevel_page_aps-sportmonks',
+			'sportmonks_page_aps-sync-manager',
+		);
+
+		if ( ! in_array( $hook, $allowed_hooks, true ) ) {
 			return;
 		}
 		
@@ -178,6 +201,8 @@ class APS_Settings {
 				'search'        => __( 'Pesquisar', 'api-sportmonks' ),
 				'noResults'     => __( 'Sem resultados.', 'api-sportmonks' ),
 				'addTeam'       => __( 'Adicionar Equipa', 'api-sportmonks' ),
+				'syncRange'     => __( 'Sincronizar por datas', 'api-sportmonks' ),
+				'dateRequired'  => __( 'Datas obrigatórias.', 'api-sportmonks' ),
 			),
 		) );
 	}
@@ -425,6 +450,256 @@ class APS_Settings {
 				<hr>
 			</div>
 		</script>
+		<?php
+	}
+
+	/**
+	 * Render sync management page
+	 */
+	public function render_sync_page() {
+		if ( ! current_user_can( 'manage_options' ) ) {
+			return;
+		}
+
+		$last_sync_started = get_option( 'aps_smonks_last_sync_started', '' );
+		$last_sync = get_option( 'aps_smonks_last_sync', '' );
+		$last_results = get_option( 'aps_smonks_last_sync_results', array() );
+		$last_metrics = get_option( 'aps_smonks_last_sync_metrics', array() );
+		$sync_frequency = get_option( 'aps_smonks_sync_frequency', 'hourly' );
+		$teams = get_option( 'aps_smonks_teams', array() );
+		$filter_team = absint( $_GET['aps_team'] ?? 0 );
+		$filter_from = sanitize_text_field( $_GET['aps_from'] ?? '' );
+		$filter_to = sanitize_text_field( $_GET['aps_to'] ?? '' );
+		$games_paged = max( 1, absint( $_GET['paged'] ?? 1 ) );
+		$error_logs = APS_Error_Logger::get_instance()->get_logs( array(
+			'error_type' => 'SYNC_ERROR',
+			'per_page'   => 10,
+			'page'       => 1,
+		) );
+
+		$meta_query = array();
+		if ( $filter_team ) {
+			$meta_query[] = array(
+				'relation' => 'OR',
+				array(
+					'key'   => '_aps_team_home_id',
+					'value' => $filter_team,
+				),
+				array(
+					'key'   => '_aps_team_away_id',
+					'value' => $filter_team,
+				),
+			);
+		}
+
+		if ( $filter_from && $filter_to ) {
+			$meta_query[] = array(
+				'key'     => '_aps_match_date',
+				'value'   => array( $filter_from . ' 00:00:00', $filter_to . ' 23:59:59' ),
+				'compare' => 'BETWEEN',
+				'type'    => 'DATETIME',
+			);
+		} elseif ( $filter_from ) {
+			$meta_query[] = array(
+				'key'     => '_aps_match_date',
+				'value'   => $filter_from . ' 00:00:00',
+				'compare' => '>=',
+				'type'    => 'DATETIME',
+			);
+		} elseif ( $filter_to ) {
+			$meta_query[] = array(
+				'key'     => '_aps_match_date',
+				'value'   => $filter_to . ' 23:59:59',
+				'compare' => '<=',
+				'type'    => 'DATETIME',
+			);
+		}
+
+		$games_query = new WP_Query( array(
+			'post_type'      => 'aps_jogo',
+			'posts_per_page' => 20,
+			'paged'          => $games_paged,
+			'meta_query'     => $meta_query,
+			'orderby'        => 'meta_value',
+			'meta_key'       => '_aps_match_date',
+			'order'          => 'DESC',
+		) );
+
+		?>
+		<div class="wrap">
+			<h1><?php echo esc_html( get_admin_page_title() ); ?></h1>
+
+			<p>
+				<?php _e( 'Frequência atual:', 'api-sportmonks' ); ?>
+				<strong><?php echo esc_html( $sync_frequency ); ?></strong>
+				&mdash;
+				<a href="<?php echo esc_url( admin_url( 'admin.php?page=aps-sportmonks' ) ); ?>">
+					<?php _e( 'Alterar nas Configurações', 'api-sportmonks' ); ?>
+				</a>
+			</p>
+
+			<h2><?php _e( 'Sincronização Manual', 'api-sportmonks' ); ?></h2>
+			<p>
+				<button type="button" id="aps-manual-sync" class="button button-primary">
+					<?php _e( 'Sincronizar Agora', 'api-sportmonks' ); ?>
+				</button>
+				<span id="aps-sync-status" style="margin-left: 10px;"></span>
+			</p>
+
+			<h3><?php _e( 'Sincronizar por datas', 'api-sportmonks' ); ?></h3>
+			<p>
+				<input type="date" id="aps-sync-date-from" value="" />
+				<input type="date" id="aps-sync-date-to" value="" />
+				<button type="button" id="aps-manual-sync-range" class="button">
+					<?php _e( 'Sincronizar por datas', 'api-sportmonks' ); ?>
+				</button>
+				<span id="aps-sync-range-status" style="margin-left: 10px;"></span>
+			</p>
+
+			<h2><?php _e( 'Última Sincronização', 'api-sportmonks' ); ?></h2>
+			<table class="widefat striped">
+				<tbody>
+					<tr>
+						<th><?php _e( 'Início', 'api-sportmonks' ); ?></th>
+						<td><?php echo esc_html( $last_sync_started ? date_i18n( get_option( 'date_format' ) . ' ' . get_option( 'time_format' ), strtotime( $last_sync_started ) ) : '-' ); ?></td>
+					</tr>
+					<tr>
+						<th><?php _e( 'Fim', 'api-sportmonks' ); ?></th>
+						<td><?php echo esc_html( $last_sync ? date_i18n( get_option( 'date_format' ) . ' ' . get_option( 'time_format' ), strtotime( $last_sync ) ) : '-' ); ?></td>
+					</tr>
+					<tr>
+						<th><?php _e( 'Resumo', 'api-sportmonks' ); ?></th>
+						<td>
+							<?php
+							if ( is_array( $last_results ) && ! empty( $last_results ) ) {
+								printf(
+									esc_html__( '%d sucesso, %d erros, %d criados, %d atualizados', 'api-sportmonks' ),
+									(int) ( $last_results['success'] ?? 0 ),
+									(int) ( $last_results['error'] ?? 0 ),
+									(int) ( $last_results['created'] ?? 0 ),
+									(int) ( $last_results['updated'] ?? 0 )
+								);
+							} else {
+								echo esc_html__( 'Sem dados ainda.', 'api-sportmonks' );
+							}
+							?>
+						</td>
+					</tr>
+					<?php if ( is_array( $last_metrics ) && ! empty( $last_metrics ) ) : ?>
+						<tr>
+							<th><?php _e( 'Métricas', 'api-sportmonks' ); ?></th>
+							<td>
+								<?php
+								printf(
+									esc_html__( 'Fixtures: %d total, %d criados, %d atualizados, %d erros. Duração: %ss', 'api-sportmonks' ),
+									(int) ( $last_metrics['fixtures_total'] ?? 0 ),
+									(int) ( $last_metrics['fixtures_created'] ?? 0 ),
+									(int) ( $last_metrics['fixtures_updated'] ?? 0 ),
+									(int) ( $last_metrics['fixtures_errors'] ?? 0 ),
+									esc_html( (string) ( $last_metrics['duration_seconds'] ?? 0 ) )
+								);
+								?>
+							</td>
+						</tr>
+					<?php endif; ?>
+				</tbody>
+			</table>
+
+			<h2><?php _e( 'Erros Recentes do Sync', 'api-sportmonks' ); ?></h2>
+			<?php if ( empty( $error_logs ) ) : ?>
+				<p><?php _e( 'Sem erros recentes.', 'api-sportmonks' ); ?></p>
+			<?php else : ?>
+				<table class="widefat striped">
+					<thead>
+						<tr>
+							<th><?php _e( 'Data/Hora', 'api-sportmonks' ); ?></th>
+							<th><?php _e( 'Mensagem', 'api-sportmonks' ); ?></th>
+							<th><?php _e( 'Código', 'api-sportmonks' ); ?></th>
+						</tr>
+					</thead>
+					<tbody>
+						<?php foreach ( $error_logs as $log ) : ?>
+							<tr>
+								<td><?php echo esc_html( date_i18n( get_option( 'date_format' ) . ' ' . get_option( 'time_format' ), strtotime( $log['timestamp'] ) ) ); ?></td>
+								<td><?php echo esc_html( wp_trim_words( $log['error_message'], 18 ) ); ?></td>
+								<td><?php echo esc_html( $log['error_code'] ?: '-' ); ?></td>
+							</tr>
+						<?php endforeach; ?>
+					</tbody>
+				</table>
+				<p style="margin-top: 10px;">
+					<a class="button" href="<?php echo esc_url( admin_url( 'admin.php?page=aps-error-log&error_type=SYNC_ERROR' ) ); ?>">
+						<?php _e( 'Ver todos os erros', 'api-sportmonks' ); ?>
+					</a>
+				</p>
+			<?php endif; ?>
+
+			<h2><?php _e( 'Jogos sincronizados', 'api-sportmonks' ); ?></h2>
+			<form method="get" action="">
+				<input type="hidden" name="page" value="aps-sync-manager" />
+				<select name="aps_team">
+					<option value=""><?php _e( 'Todas as equipas', 'api-sportmonks' ); ?></option>
+					<?php foreach ( $teams as $team ) : ?>
+						<option value="<?php echo esc_attr( $team['team_id'] ); ?>" <?php selected( $filter_team, (int) $team['team_id'] ); ?>>
+							<?php echo esc_html( $team['team_name'] ); ?>
+						</option>
+					<?php endforeach; ?>
+				</select>
+				<input type="date" name="aps_from" value="<?php echo esc_attr( $filter_from ); ?>" />
+				<input type="date" name="aps_to" value="<?php echo esc_attr( $filter_to ); ?>" />
+				<?php submit_button( __( 'Filtrar', 'api-sportmonks' ), 'secondary', '', false ); ?>
+				<a class="button" href="<?php echo esc_url( admin_url( 'admin.php?page=aps-sync-manager' ) ); ?>">
+					<?php _e( 'Limpar', 'api-sportmonks' ); ?>
+				</a>
+			</form>
+
+			<table class="widefat striped" style="margin-top: 10px;">
+				<thead>
+					<tr>
+						<th><?php _e( 'Jogo', 'api-sportmonks' ); ?></th>
+						<th><?php _e( 'Data', 'api-sportmonks' ); ?></th>
+						<th><?php _e( 'Equipas', 'api-sportmonks' ); ?></th>
+						<th><?php _e( 'Estado', 'api-sportmonks' ); ?></th>
+					</tr>
+				</thead>
+				<tbody>
+					<?php if ( $games_query->have_posts() ) : ?>
+						<?php while ( $games_query->have_posts() ) : $games_query->the_post(); ?>
+							<?php
+							$post_id = get_the_ID();
+							$home = get_post_meta( $post_id, '_aps_team_home_name', true );
+							$away = get_post_meta( $post_id, '_aps_team_away_name', true );
+							$status = get_post_meta( $post_id, '_aps_match_status', true );
+							$date = get_post_meta( $post_id, '_aps_match_date', true );
+							?>
+							<tr>
+								<td><a href="<?php echo esc_url( get_edit_post_link( $post_id ) ); ?>"><?php echo esc_html( get_the_title() ); ?></a></td>
+								<td><?php echo esc_html( $date ? date_i18n( get_option( 'date_format' ) . ' ' . get_option( 'time_format' ), strtotime( $date ) ) : '-' ); ?></td>
+								<td><?php echo esc_html( $home ?: '-' ) . ' vs ' . esc_html( $away ?: '-' ); ?></td>
+								<td><?php echo esc_html( $status ?: '-' ); ?></td>
+							</tr>
+						<?php endwhile; ?>
+					<?php else : ?>
+						<tr>
+							<td colspan="4"><?php _e( 'Sem jogos encontrados.', 'api-sportmonks' ); ?></td>
+						</tr>
+					<?php endif; ?>
+				</tbody>
+			</table>
+			<?php
+			if ( $games_query->max_num_pages > 1 ) {
+				echo '<div class="tablenav"><div class="tablenav-pages">';
+				echo paginate_links( array(
+					'base'    => add_query_arg( 'paged', '%#%' ),
+					'format'  => '',
+					'current' => $games_paged,
+					'total'   => $games_query->max_num_pages,
+				) );
+				echo '</div></div>';
+			}
+			wp_reset_postdata();
+			?>
+		</div>
 		<?php
 	}
 	
