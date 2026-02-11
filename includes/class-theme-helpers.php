@@ -58,10 +58,23 @@ class APS_Theme_Helpers {
 	}
 	
 	/**
+	 * Get the primary (first configured) team ID for venue fallback (e.g. "O jogo será jogado em casa" / "O jogo será jogado fora").
+	 *
+	 * @return int Team ID or 0 if no teams configured.
+	 */
+	public static function get_primary_team_id() {
+		$teams = get_option( 'aps_smonks_teams', array() );
+		if ( empty( $teams ) || ! isset( $teams[0]['team_id'] ) ) {
+			return 0;
+		}
+		return (int) $teams[0]['team_id'];
+	}
+
+	/**
 	 * Get match data from post
 	 *
 	 * @param int $post_id Post ID
-	 * @return array Match data
+	 * @return array Match data with keys: match_id, team_home_id, team_away_id, team_home_name, team_away_name, league_id, match_date, match_status, score_home, score_away, venue_name, venue_display. venue_display is the stadium name when present, or "O jogo será jogado em casa" / "O jogo será jogado fora" when venue is empty (based on primary team vs home_team_id).
 	 */
 	public static function get_match_from_post( $post_id ) {
 		$match_id = get_post_meta( $post_id, '_aps_match_id', true );
@@ -70,17 +83,34 @@ class APS_Theme_Helpers {
 			return array();
 		}
 		
+		$team_home_id = get_post_meta( $post_id, '_aps_team_home_id', true );
+		$venue_name   = get_post_meta( $post_id, '_aps_venue_name', true );
+		$venue_name   = is_string( $venue_name ) ? trim( $venue_name ) : '';
+
+		// Fallback: when stadium is empty (Sportmonks may not provide venue name), compare home_team_id with primary team (e.g. Porto) to show "O jogo será jogado em casa" or "O jogo será jogado fora".
+		$venue_display = $venue_name;
+		if ( $venue_display === '' ) {
+			$primary_team_id = self::get_primary_team_id();
+			if ( $primary_team_id && (int) $team_home_id === $primary_team_id ) {
+				$venue_display = __( 'O jogo será jogado em casa', 'api-sportmonks' );
+			} elseif ( $primary_team_id ) {
+				$venue_display = __( 'O jogo será jogado fora', 'api-sportmonks' );
+			}
+		}
+		
 		return array(
-			'match_id'      => $match_id,
-			'team_home_id' => get_post_meta( $post_id, '_aps_team_home_id', true ),
-			'team_away_id' => get_post_meta( $post_id, '_aps_team_away_id', true ),
+			'match_id'       => $match_id,
+			'team_home_id'   => $team_home_id,
+			'team_away_id'   => get_post_meta( $post_id, '_aps_team_away_id', true ),
 			'team_home_name' => get_post_meta( $post_id, '_aps_team_home_name', true ),
 			'team_away_name' => get_post_meta( $post_id, '_aps_team_away_name', true ),
-			'league_id'    => get_post_meta( $post_id, '_aps_league_id', true ),
-			'match_date'   => get_post_meta( $post_id, '_aps_match_date', true ),
-			'match_status' => get_post_meta( $post_id, '_aps_match_status', true ),
-			'score_home'   => get_post_meta( $post_id, '_aps_score_home', true ),
-			'score_away'   => get_post_meta( $post_id, '_aps_score_away', true ),
+			'league_id'      => get_post_meta( $post_id, '_aps_league_id', true ),
+			'match_date'     => get_post_meta( $post_id, '_aps_match_date', true ),
+			'match_status'   => get_post_meta( $post_id, '_aps_match_status', true ),
+			'score_home'     => get_post_meta( $post_id, '_aps_score_home', true ),
+			'score_away'     => get_post_meta( $post_id, '_aps_score_away', true ),
+			'venue_name'     => $venue_name,
+			'venue_display'  => $venue_display,
 		);
 	}
 	

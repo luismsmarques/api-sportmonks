@@ -140,7 +140,8 @@ $stats = APS_Theme_Helpers::get_match_statistics( $match );
 
 ### Match (dados base do post)
 ```php
-// Usa o post meta como fallback para dados basicos do jogo
+// Usa o post meta como fallback para dados basicos do jogo.
+// Inclui venue_name e venue_display (estádio ou "O jogo será jogado em casa"/"O jogo será jogado fora" quando venue está vazio).
 $match_meta = aps_get_match_from_post( get_the_ID() );
 ```
 
@@ -234,6 +235,10 @@ $team_away_logo = get_post_meta( $post_id, '_aps_team_away_logo', true );  // UR
 $score_home    = get_post_meta( $post_id, '_aps_score_home', true );
 $score_away    = get_post_meta( $post_id, '_aps_score_away', true );
 $match_id      = get_post_meta( $post_id, '_aps_match_id', true );
+
+// Local do jogo: usar aps_get_match_from_post para ter venue_display (estádio ou "O jogo será jogado em casa"/"O jogo será jogado fora")
+$match_meta = aps_get_match_from_post( $post_id );
+$venue_display = $match_meta['venue_display'] ?? '';  // nome do estádio ou "O jogo será jogado em casa" / "O jogo será jogado fora"
 ```
 
 A competição fica associada à taxonomia `aps_competicao` (usar `get_the_terms( $post_id, 'aps_competicao' )`).
@@ -255,5 +260,6 @@ if ( $match_id ) {
 - Alguns endpoints e includes podem estar limitados pelo plano. Para esses casos, o helper devolve erro `403` ou `404`.
 - Includes que podem falhar consoante o plano: `lineups`, `venue`, `referee`, `statistics.periods`, `h2h`.
 - Use sempre fallback com dados do post (`aps_get_match_from_post`) quando a API falhar.
+- Quando o estádio (`venue`) não vem da API, `aps_get_match_from_post` devolve em `venue_display` "O jogo será jogado em casa" ou "O jogo será jogado fora" consoante `team_home_id` seja ou não a equipa principal configurada (ex.: Porto).
 - Evite chamar APIs diretamente no frontend (JS). Use sempre helpers no PHP.
 

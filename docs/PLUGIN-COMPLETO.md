@@ -12,7 +12,9 @@ Documento de referência com todas as funcionalidades, opções, APIs e possibil
 | **Versão** | 1.0.0 |
 | **Text Domain** | api-sportmonks |
 | **Requisitos** | WordPress 5.0+, PHP 7.4+, cURL, JSON |
-| **Descrição** | Integração com a API Sportmonks para sincronizar dados de futebol e criar posts de jogos (CPT). |
+| **Autor** | Luis Marques (Atlas Invencível) |
+| **Site** | [atlasinvencivel.pt](https://atlasinvencivel.pt/) |
+| **Descrição** | Integra o WordPress com a API Sportmonks: sincroniza jogos, resultados, classificações, plantéis, lesões e transferências; CPT Jogo; shortcodes e componentes; painel de configuração, gestão de sync e explorador de dados. |
 
 **Constantes definidas:**
 - `APS_SMONKS_VERSION` — versão do plugin
@@ -247,7 +249,7 @@ Todas podem devolver `WP_Error` em caso de falha. Os dados vêm normalmente em f
 
 | Função | Descrição |
 |--------|-----------|
-| `aps_get_match_from_post( $post_id )` | Dados básicos do jogo a partir do post (meta) |
+| `aps_get_match_from_post( $post_id )` | Dados básicos do jogo a partir do post (meta); inclui `venue_name` e `venue_display` — quando o estádio está vazio, "O jogo será jogado em casa" ou "O jogo será jogado fora" consoante `team_home_id` vs equipa principal (ex.: Porto) |
 | `aps_get_match_data( $match_id, $use_cache )` | Fixture da API (includes base) |
 | `aps_get_full_match_details( $match_id )` | Jogo com participants, scores, state, events, statistics, events.type |
 | `aps_get_team_fixtures( $team_id, $params, $includes, $use_cache )` | Fixtures da equipa (params: filters, order, per_page, etc.) |
