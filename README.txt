@@ -24,7 +24,7 @@ O **API Sportmonks** liga o seu site WordPress à API oficial da Sportmonks e ma
 * **Componentes reutilizáveis** – Agenda/resultados, classificação da competição, head-to-head, lesões/suspensões, forma recente e linha de eventos, via shortcode ou PHP.
 * **Painel de gestão** – Configurações, gestão de sync, explorador de dados da API e registo de erros num menu dedicado (Sportmonks).
 * **Preparado para temas** – Funções helper (aps_get_*) e mapeamento equipas ↔ categorias para integrar nos seus templates.
-* **Fallback de estádio** – Quando o nome do estádio não vem da API, o helper compara a equipa da casa com a equipa principal (ex.: Porto) e exibe "O jogo será jogado em casa" ou "O jogo será jogado fora".
+* **Fallback de estádio** – Quando o nome do estádio não vem da API, o helper compara a equipa da casa com a equipa principal (ex.: Porto) e exibe "O jogo será jogado em casa" ou "O jogo será jogado fora". Outros plugins (ex.: geradores de conteúdo pre-match/post-match) podem usar aps_get_match_from_post() e o campo venue_display para o mesmo efeito.
 
 = Requisitos =
 

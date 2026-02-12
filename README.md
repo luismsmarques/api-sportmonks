@@ -10,7 +10,7 @@ Plugin WordPress para integração com a API Sportmonks, permitindo sincronizar 
 - **Data Explorer**: Interface para explorar dados diretamente da API Sportmonks
 - **Error Logging**: Sistema completo de registo de erros com interface admin
 - **Theme Helpers**: Funções helper para temas obterem dados da API
-- **Fallback de estádio**: Quando o nome do estádio não vem da API, exibe "O jogo será jogado em casa" ou "O jogo será jogado fora" consoante a equipa da casa ser a equipa principal (ex.: Porto)
+- **Fallback de estádio**: Quando o nome do estádio não vem da API, exibe "O jogo será jogado em casa" ou "O jogo será jogado fora" consoante a equipa da casa ser a equipa principal (ex.: Porto). Plugins de conteúdo (ex.: pre-match/post-match) podem usar `aps_get_match_from_post()` e o campo `venue_display` para o mesmo efeito.
 
 ## Requisitos
 
