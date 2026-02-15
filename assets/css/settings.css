@@ -1,8 +1,87 @@
+/* Page wrap & intro */
+.aps-settings-wrap {
+	max-width: 900px;
+}
+.aps-settings-intro {
+	margin: 0 0 1.5em;
+	padding: 12px 16px;
+	background: #f0f6fc;
+	border-left: 4px solid #2271b1;
+	color: #1d2327;
+	font-size: 14px;
+	line-height: 1.5;
+}
+
+/* Sections */
+.aps-settings-section {
+	margin-bottom: 2em;
+	padding: 1.25em 1.5em;
+	background: #fff;
+	border: 1px solid #c3c4c7;
+	box-shadow: 0 1px 1px rgba(0, 0, 0, 0.04);
+	border-radius: 4px;
+}
+.aps-settings-section-title {
+	margin: 0 0 0.5em;
+	padding: 0;
+	font-size: 1.15em;
+	font-weight: 600;
+	color: #1d2327;
+	border: none;
+}
+.aps-settings-section-desc {
+	margin: 0 0 1em;
+	color: #50575e;
+	font-size: 13px;
+	line-height: 1.5;
+}
+.aps-settings-section .form-table {
+	margin-top: 0;
+}
+.aps-settings-section .form-table th {
+	padding-top: 1em;
+}
+.aps-settings-section .form-table tr:first-child th,
+.aps-settings-section .form-table tr:first-child td {
+	padding-top: 0;
+}
+
+/* Steps list (Equipas) */
+.aps-settings-steps {
+	margin: 0 0 1em 1.25em;
+	padding: 0;
+	color: #50575e;
+	font-size: 13px;
+	line-height: 1.6;
+}
+.aps-settings-steps li {
+	margin-bottom: 0.35em;
+}
+
+/* Actions row */
+.aps-settings-actions {
+	display: flex;
+	align-items: center;
+	flex-wrap: wrap;
+	gap: 10px;
+	margin: 1em 0 0;
+}
+.aps-sync-status {
+	margin-left: 4px;
+	font-size: 13px;
+	color: #50575e;
+}
+.aps-settings-submit {
+	margin: 1.5em 0 0;
+	padding-top: 1em;
+	border-top: 1px solid #c3c4c7;
+}
+
 .aps-team-item {
 	margin-bottom: 20px;
 	padding: 15px;
-	background: #fff;
-	border: 1px solid #ccd0d4;
+	background: #f6f7f7;
+	border: 1px solid #dcdcde;
 	border-radius: 4px;
 }
 

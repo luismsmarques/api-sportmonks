@@ -137,7 +137,8 @@ class APS_Components {
 
 		$this->register_frontend_assets();
 
-		wp_enqueue_style( 'aps-components', APS_SMONKS_PLUGIN_URL . 'assets/css/components-admin.css', array(), APS_SMONKS_VERSION );
+		wp_enqueue_style( 'aps-admin-common', APS_SMONKS_PLUGIN_URL . 'assets/css/admin-common.css', array(), APS_SMONKS_VERSION );
+		wp_enqueue_style( 'aps-components', APS_SMONKS_PLUGIN_URL . 'assets/css/components-admin.css', array( 'aps-admin-common' ), APS_SMONKS_VERSION );
 		wp_enqueue_script( 'aps-components', APS_SMONKS_PLUGIN_URL . 'assets/js/components-admin.js', array( 'jquery' ), APS_SMONKS_VERSION, true );
 		wp_localize_script( 'aps-components', 'apsComponents', array(
 			'ajaxUrl'   => admin_url( 'admin-ajax.php' ),
@@ -186,15 +187,21 @@ class APS_Components {
 
 		$registry = $this->get_registry();
 		?>
-		<div class="wrap">
+		<div class="wrap aps-admin-wrap">
 			<h1><?php echo esc_html( get_admin_page_title() ); ?></h1>
-			<p class="description"><?php esc_html_e( 'Use este painel para testar componentes antes de os incluir no template.', 'api-sportmonks' ); ?></p>
+			<p class="aps-admin-intro">
+				<?php esc_html_e( 'Os componentes são blocos reutilizáveis (agenda/resultados, classificação, confronto direto, lesões, etc.) que pode usar no tema via shortcode ou PHP. Aqui pode testar cada um antes de o colocar numa página: escolha o componente, preencha os parâmetros e veja a pré-visualização e o JSON da API.', 'api-sportmonks' ); ?>
+			</p>
 
 			<div class="aps-components-admin">
-				<div class="aps-components-panel">
+				<section id="aps-components-select" class="aps-admin-section aps-components-panel">
+					<h2 class="aps-admin-section-title"><?php esc_html_e( '1. Selecionar e testar componente', 'api-sportmonks' ); ?></h2>
+					<p class="aps-admin-section-desc">
+						<?php esc_html_e( 'O que fazer: escolha um componente na lista. Serão mostrados os parâmetros necessários (ex.: team_id, league_id). Preencha-os e clique em «Testar componente». O resultado aparece à direita.', 'api-sportmonks' ); ?>
+					</p>
 					<label for="aps-component-select"><?php esc_html_e( 'Componente', 'api-sportmonks' ); ?></label>
 					<select id="aps-component-select" class="regular-text">
-						<option value=""><?php esc_html_e( '-- Selecionar --', 'api-sportmonks' ); ?></option>
+						<option value=""><?php esc_html_e( '— Selecionar —', 'api-sportmonks' ); ?></option>
 						<?php foreach ( $registry as $key => $component ) : ?>
 							<option value="<?php echo esc_attr( $key ); ?>"><?php echo esc_html( $component['label'] ); ?></option>
 						<?php endforeach; ?>
@@ -206,15 +213,19 @@ class APS_Components {
 					<button type="button" id="aps-component-preview" class="button button-primary">
 						<?php esc_html_e( 'Testar componente', 'api-sportmonks' ); ?>
 					</button>
-				</div>
+				</section>
 
-				<div class="aps-components-result">
-					<h2><?php esc_html_e( 'Pré-visualização', 'api-sportmonks' ); ?></h2>
+				<section id="aps-components-result" class="aps-admin-section aps-components-result">
+					<h2 class="aps-admin-section-title"><?php esc_html_e( '2. Pré-visualização e resposta da API', 'api-sportmonks' ); ?></h2>
+					<p class="aps-admin-section-desc">
+						<?php esc_html_e( 'Após clicar em «Testar componente», aqui aparece o HTML renderizado (como ficará no site) e o JSON devolvido pela API.', 'api-sportmonks' ); ?>
+					</p>
+					<h3><?php esc_html_e( 'Pré-visualização', 'api-sportmonks' ); ?></h3>
 					<div id="aps-component-preview-html" class="aps-component-preview"></div>
 
-					<h2><?php esc_html_e( 'Resposta da API', 'api-sportmonks' ); ?></h2>
+					<h3><?php esc_html_e( 'Resposta da API', 'api-sportmonks' ); ?></h3>
 					<pre id="aps-component-preview-json"></pre>
-				</div>
+				</section>
 			</div>
 		</div>
 		<?php

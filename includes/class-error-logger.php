@@ -41,6 +41,19 @@ class APS_Error_Logger {
 	private function __construct() {
 		add_action( 'admin_menu', array( $this, 'add_admin_menu' ) );
 		add_action( 'admin_init', array( $this, 'handle_actions' ) );
+		add_action( 'admin_enqueue_scripts', array( $this, 'enqueue_scripts' ) );
+	}
+
+	/**
+	 * Enqueue admin styles for error log page.
+	 *
+	 * @param string $hook Current admin page hook.
+	 */
+	public function enqueue_scripts( $hook ) {
+		if ( $hook !== 'sportmonks_page_aps-error-log' ) {
+			return;
+		}
+		wp_enqueue_style( 'aps-admin-common', APS_SMONKS_PLUGIN_URL . 'assets/css/admin-common.css', array(), APS_SMONKS_VERSION );
 	}
 	
 	/**
@@ -141,51 +154,66 @@ class APS_Error_Logger {
 		$error_types = $wpdb->get_col( "SELECT DISTINCT error_type FROM $table_name ORDER BY error_type" );
 		
 		?>
-		<div class="wrap">
+		<div class="wrap aps-admin-wrap">
 			<h1><?php echo esc_html( get_admin_page_title() ); ?></h1>
-			
-			<div class="aps-error-log-filters">
+			<p class="aps-admin-intro">
+				<?php _e( 'O plugin regista aqui erros da API, falhas de sincronização e outros problemas. Use os filtros para encontrar erros por tipo ou data; pode limpar logs antigos, apagar tudo ou exportar para CSV.', 'api-sportmonks' ); ?>
+			</p>
+
+			<section id="aps-error-log-filters" class="aps-admin-section">
+				<h2 class="aps-admin-section-title"><?php _e( '1. Filtrar logs', 'api-sportmonks' ); ?></h2>
+				<p class="aps-admin-section-desc">
+					<?php _e( 'O que fazer: escolha o tipo de erro (ex.: SYNC_ERROR, API_ERROR) e/ou intervalo de datas e clique em «Filtrar». Para ver tudo, use «Limpar filtros».', 'api-sportmonks' ); ?>
+				</p>
 				<form method="get" action="">
 					<input type="hidden" name="page" value="aps-error-log" />
-					
 					<select name="error_type">
-						<option value=""><?php _e( 'Todos os Tipos', 'api-sportmonks' ); ?></option>
+						<option value=""><?php _e( 'Todos os tipos', 'api-sportmonks' ); ?></option>
 						<?php foreach ( $error_types as $type ) : ?>
 							<option value="<?php echo esc_attr( $type ); ?>" <?php selected( $error_type, $type ); ?>>
 								<?php echo esc_html( $type ); ?>
 							</option>
 						<?php endforeach; ?>
 					</select>
-					
-					<input type="date" name="date_from" value="<?php echo esc_attr( $date_from ); ?>" placeholder="<?php _e( 'Data Inicial', 'api-sportmonks' ); ?>" />
-					<input type="date" name="date_to" value="<?php echo esc_attr( $date_to ); ?>" placeholder="<?php _e( 'Data Final', 'api-sportmonks' ); ?>" />
-					
+					<input type="date" name="date_from" value="<?php echo esc_attr( $date_from ); ?>" />
+					<input type="date" name="date_to" value="<?php echo esc_attr( $date_to ); ?>" />
 					<?php submit_button( __( 'Filtrar', 'api-sportmonks' ), 'secondary', '', false ); ?>
 					<a href="<?php echo esc_url( admin_url( 'admin.php?page=aps-error-log' ) ); ?>" class="button">
-						<?php _e( 'Limpar Filtros', 'api-sportmonks' ); ?>
+						<?php _e( 'Limpar filtros', 'api-sportmonks' ); ?>
 					</a>
 				</form>
-			</div>
-			
-			<div class="aps-error-log-actions">
-				<form method="post" action="" style="display: inline;">
-					<?php wp_nonce_field( 'aps_clear_old_logs' ); ?>
-					<input type="number" name="days" value="30" min="1" style="width: 60px;" />
-					<?php submit_button( __( 'Limpar Logs Antigos', 'api-sportmonks' ), 'secondary', 'aps_clear_old_logs', false ); ?>
-				</form>
-				
-				<form method="post" action="" style="display: inline; margin-left: 10px;">
-					<?php wp_nonce_field( 'aps_delete_all_logs' ); ?>
-					<?php submit_button( __( 'Limpar Todos os Logs', 'api-sportmonks' ), 'delete', 'aps_delete_all_logs', false ); ?>
-				</form>
-				
-				<a href="<?php echo esc_url( wp_nonce_url( admin_url( 'admin.php?page=aps-error-log&action=export' ), 'aps_export_logs' ) ); ?>" class="button">
-					<?php _e( 'Exportar CSV', 'api-sportmonks' ); ?>
-				</a>
-			</div>
-			
-			<p><?php printf( __( 'Total: %d logs', 'api-sportmonks' ), $total ); ?></p>
-			
+			</section>
+
+			<section id="aps-error-log-actions" class="aps-admin-section">
+				<h2 class="aps-admin-section-title"><?php _e( '2. Ações', 'api-sportmonks' ); ?></h2>
+				<p class="aps-admin-section-desc">
+					<?php _e( 'Remover logs com mais de X dias, apagar todos os logs ou exportar a lista atual para um ficheiro CSV.', 'api-sportmonks' ); ?>
+				</p>
+				<div class="aps-admin-actions">
+					<form method="post" action="" style="display: inline;">
+						<?php wp_nonce_field( 'aps_clear_old_logs' ); ?>
+						<label>
+							<?php _e( 'Apagar logs com mais de', 'api-sportmonks' ); ?>
+							<input type="number" name="days" value="30" min="1" style="width: 60px;" />
+							<?php _e( 'dias', 'api-sportmonks' ); ?>
+						</label>
+						<?php submit_button( __( 'Limpar logs antigos', 'api-sportmonks' ), 'secondary', 'aps_clear_old_logs', false ); ?>
+					</form>
+					<form method="post" action="" style="display: inline;">
+						<?php wp_nonce_field( 'aps_delete_all_logs' ); ?>
+						<?php submit_button( __( 'Limpar todos os logs', 'api-sportmonks' ), 'delete', 'aps_delete_all_logs', false ); ?>
+					</form>
+					<a href="<?php echo esc_url( wp_nonce_url( admin_url( 'admin.php?page=aps-error-log&action=export' ), 'aps_export_logs' ) ); ?>" class="button">
+						<?php _e( 'Exportar CSV', 'api-sportmonks' ); ?>
+					</a>
+				</div>
+			</section>
+
+			<section id="aps-error-log-list" class="aps-admin-section">
+				<h2 class="aps-admin-section-title"><?php _e( '3. Lista de logs', 'api-sportmonks' ); ?></h2>
+				<p class="aps-admin-section-desc">
+					<?php printf( __( 'Total: %d registos. Clique em «Ver detalhes» para expandir a mensagem completa e contexto; «Remover» apaga esse registo.', 'api-sportmonks' ), $total ); ?>
+				</p>
 			<table class="wp-list-table widefat fixed striped">
 				<thead>
 					<tr>
@@ -267,6 +295,7 @@ class APS_Error_Logger {
 					</div>
 				</div>
 			<?php endif; ?>
+			</section>
 		</div>
 		
 		<script>

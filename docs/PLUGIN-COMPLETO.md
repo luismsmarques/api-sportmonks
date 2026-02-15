@@ -9,7 +9,7 @@ Documento de referência com todas as funcionalidades, opções, APIs e possibil
 | Item | Valor |
 |------|--------|
 | **Nome** | API Sportmonks |
-| **Versão** | 1.0.2 |
+| **Versão** | 1.0.3 |
 | **Text Domain** | api-sportmonks |
 | **Requisitos** | WordPress 5.0+, PHP 7.4+, cURL, JSON |
 | **Autor** | Luis Marques (Atlas Invencível) |

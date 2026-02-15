@@ -1,0 +1,99 @@
+/**
+ * Common styles for Sportmonks admin pages (Configurações, Gestão de Sync, Erros, Data Explorer, Componentes).
+ */
+
+.aps-settings-wrap,
+.aps-admin-wrap {
+	max-width: 960px;
+}
+
+.aps-settings-intro,
+.aps-admin-intro {
+	margin: 0 0 1.5em;
+	padding: 12px 16px;
+	background: #f0f6fc;
+	border-left: 4px solid #2271b1;
+	color: #1d2327;
+	font-size: 14px;
+	line-height: 1.5;
+}
+
+.aps-settings-section,
+.aps-admin-section {
+	margin-bottom: 2em;
+	padding: 1.25em 1.5em;
+	background: #fff;
+	border: 1px solid #c3c4c7;
+	box-shadow: 0 1px 1px rgba(0, 0, 0, 0.04);
+	border-radius: 4px;
+}
+
+.aps-settings-section-title,
+.aps-admin-section-title {
+	margin: 0 0 0.5em;
+	padding: 0;
+	font-size: 1.15em;
+	font-weight: 600;
+	color: #1d2327;
+	border: none;
+}
+
+.aps-settings-section-desc,
+.aps-admin-section-desc {
+	margin: 0 0 1em;
+	color: #50575e;
+	font-size: 13px;
+	line-height: 1.5;
+}
+
+.aps-settings-section .form-table,
+.aps-admin-section .form-table {
+	margin-top: 0;
+}
+
+.aps-settings-section .form-table th,
+.aps-admin-section .form-table th {
+	padding-top: 1em;
+}
+
+.aps-settings-section .form-table tr:first-child th,
+.aps-settings-section .form-table tr:first-child td,
+.aps-admin-section .form-table tr:first-child th,
+.aps-admin-section .form-table tr:first-child td {
+	padding-top: 0;
+}
+
+.aps-settings-steps,
+.aps-admin-steps {
+	margin: 0 0 1em 1.25em;
+	padding: 0;
+	color: #50575e;
+	font-size: 13px;
+	line-height: 1.6;
+}
+
+.aps-settings-steps li,
+.aps-admin-steps li {
+	margin-bottom: 0.35em;
+}
+
+.aps-settings-actions,
+.aps-admin-actions {
+	display: flex;
+	align-items: center;
+	flex-wrap: wrap;
+	gap: 10px;
+	margin: 1em 0 0;
+}
+
+.aps-sync-status {
+	margin-left: 4px;
+	font-size: 13px;
+	color: #50575e;
+}
+
+.aps-settings-submit {
+	margin: 1.5em 0 0;
+	padding-top: 1em;
+	border-top: 1px solid #c3c4c7;
+}

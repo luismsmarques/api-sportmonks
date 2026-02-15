@@ -5,7 +5,7 @@ Tags: sportmonks, football, soccer, fixtures, api, sync, matches, standings, liv
 Requires at least: 5.0
 Tested up to: 6.4
 Requires PHP: 7.4
-Stable tag: 1.0.2
+Stable tag: 1.0.3
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -22,7 +22,7 @@ O **API Sportmonks** liga o seu site WordPress à API oficial da Sportmonks e ma
 * **Sincronização automática** – Jogos das equipas configuradas são criados/atualizados como posts (tipo "Jogo") em intervalos configuráveis (15 min a diário).
 * **Shortcodes prontos** – Calendário, próximo jogo, resultados, centro de jogo, classificações, melhores marcadores, confronto direto, plantel, lesões, transferências e perfil de jogador.
 * **Componentes reutilizáveis** – Agenda/resultados, classificação da competição, head-to-head, lesões/suspensões, forma recente e linha de eventos, via shortcode ou PHP.
-* **Painel de gestão** – Configurações, gestão de sync, explorador de dados da API e registo de erros num menu dedicado (Sportmonks).
+* **Painel de gestão** – Configurações, Gestão de Sync, Erros do Plugin, Data Explorer e Componentes num menu dedicado (Sportmonks), com secções numeradas e texto «O que fazer» em cada página para guiar o administrador.
 * **Preparado para temas** – Funções helper (aps_get_*) e mapeamento equipas ↔ categorias para integrar nos seus templates.
 * **Fallback de estádio** – Quando o nome do estádio não vem da API, o helper compara a equipa da casa com a equipa principal (ex.: Porto) e exibe "O jogo será jogado em casa" ou "O jogo será jogado fora". Outros plugins (ex.: geradores de conteúdo pre-match/post-match) podem usar aps_get_match_from_post() e o campo venue_display para o mesmo efeito.
 * **Minuto de jogo ao vivo** – O minuto exibido em jogos ao vivo vem da API Sportmonks (include `periods` e campo `state`), sem estimativa no cliente. O plugin pede `periods` ao obter um fixture e o sync grava o minuto em `_aps_elapsed` quando a API o fornece.
@@ -57,6 +57,11 @@ Em **Sportmonks > Configurações**, na secção Equipas, clique em **+ Adiciona
 Verifique: (1) se o API Token está correto (use **Testar Token** nas Configurações); (2) se adicionou pelo menos uma equipa com Team ID válido; (3) se executou uma sincronização (**Sportmonks > Gestão de Sync > Sincronizar Agora**). Consulte **Sportmonks > Erros do Plugin** para ver mensagens de erro da API ou da sincronização.
 
 == Changelog ==
+
+= 1.0.3 =
+* Refatoração das páginas de administração: Configurações, Gestão de Sync, Erros do Plugin, Data Explorer e Componentes reorganizadas em secções numeradas, com texto de introdução e descrição «O que fazer» em cada secção, para o administrador saber o que fazer em todas as páginas.
+* Novo ficheiro CSS comum (admin-common.css) para consistência visual em todas as páginas do menu Sportmonks.
+* Documentação: README atualizado.
 
 = 1.0.2 =
 * Minuto ao vivo da API: o plugin passa a pedir o include `periods` ao obter um fixture (get_match), para a Sportmonks devolver o minuto atual do jogo (Livescores). O minuto exibido em jogos ao vivo vem apenas da API (periods ou state) ou do meta _aps_elapsed gravado pelo sync; removida qualquer estimativa de minuto no cliente/tema.

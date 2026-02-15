@@ -192,9 +192,9 @@ class APS_Settings {
 		if ( ! in_array( $hook, $allowed_hooks, true ) ) {
 			return;
 		}
-		
+		wp_enqueue_style( 'aps-admin-common', APS_SMONKS_PLUGIN_URL . 'assets/css/admin-common.css', array(), APS_SMONKS_VERSION );
 		wp_enqueue_script( 'aps-settings', APS_SMONKS_PLUGIN_URL . 'assets/js/settings.js', array( 'jquery' ), APS_SMONKS_VERSION, true );
-		wp_enqueue_style( 'aps-settings', APS_SMONKS_PLUGIN_URL . 'assets/css/settings.css', array(), APS_SMONKS_VERSION );
+		wp_enqueue_style( 'aps-settings', APS_SMONKS_PLUGIN_URL . 'assets/css/settings.css', array( 'aps-admin-common' ), APS_SMONKS_VERSION );
 		
 		wp_localize_script( 'aps-settings', 'apsSettings', array(
 			'ajaxUrl' => admin_url( 'admin-ajax.php' ),
@@ -286,169 +286,238 @@ class APS_Settings {
 		) );
 		
 		?>
-		<div class="wrap">
+		<div class="wrap aps-settings-wrap">
 			<h1><?php echo esc_html( get_admin_page_title() ); ?></h1>
-			
+			<p class="aps-settings-intro">
+				<?php _e( 'Configure aqui o acesso à API Sportmonks, as equipas a sincronizar e o comportamento da sincronização. Siga as secções por ordem: comece pelo token da API, depois adicione as equipas e, por fim, ajuste frequência e opções avançadas se precisar.', 'api-sportmonks' ); ?>
+			</p>
+
 			<form method="post" action="">
 				<?php wp_nonce_field( 'aps_save_settings' ); ?>
-				
-				<h2><?php _e( 'Configuração da API', 'api-sportmonks' ); ?></h2>
-				<table class="form-table">
-					<tr>
-						<th scope="row">
-							<label for="aps_smonks_api_token"><?php _e( 'API Token', 'api-sportmonks' ); ?></label>
-						</th>
-						<td>
-							<input type="text" id="aps_smonks_api_token" name="aps_smonks_api_token" value="<?php echo esc_attr( $api_token ); ?>" class="regular-text" />
-							<button type="button" id="aps-test-token" class="button"><?php _e( 'Testar Token', 'api-sportmonks' ); ?></button>
-							<p class="description"><?php _e( 'Obtenha o seu token em', 'api-sportmonks' ); ?> <a href="https://my.sportmonks.com/" target="_blank">My.Sportmonks</a></p>
-						</td>
-					</tr>
-					<tr>
-						<th scope="row">
-							<label for="aps_smonks_sync_frequency"><?php _e( 'Frequência de Sincronização', 'api-sportmonks' ); ?></label>
-						</th>
-						<td>
-							<select id="aps_smonks_sync_frequency" name="aps_smonks_sync_frequency">
-								<option value="15min" <?php selected( $sync_frequency, '15min' ); ?>><?php _e( 'A cada 15 minutos', 'api-sportmonks' ); ?></option>
-								<option value="30min" <?php selected( $sync_frequency, '30min' ); ?>><?php _e( 'A cada 30 minutos', 'api-sportmonks' ); ?></option>
-								<option value="hourly" <?php selected( $sync_frequency, 'hourly' ); ?>><?php _e( 'A cada hora', 'api-sportmonks' ); ?></option>
-								<option value="2hours" <?php selected( $sync_frequency, '2hours' ); ?>><?php _e( 'A cada 2 horas', 'api-sportmonks' ); ?></option>
-								<option value="6hours" <?php selected( $sync_frequency, '6hours' ); ?>><?php _e( 'A cada 6 horas', 'api-sportmonks' ); ?></option>
-								<option value="12hours" <?php selected( $sync_frequency, '12hours' ); ?>><?php _e( 'A cada 12 horas', 'api-sportmonks' ); ?></option>
-								<option value="daily" <?php selected( $sync_frequency, 'daily' ); ?>><?php _e( 'Diariamente', 'api-sportmonks' ); ?></option>
-							</select>
-						</td>
-					</tr>
-				</table>
 
-				<h2><?php _e( 'Sincronizacao Avancada', 'api-sportmonks' ); ?></h2>
-				<table class="form-table">
-					<tr>
-						<th scope="row"><?php _e( 'Sincronizar Plantel', 'api-sportmonks' ); ?></th>
-						<td>
-							<label>
-								<input type="checkbox" name="aps_smonks_sync_squads" value="1" <?php checked( $sync_squads, 1 ); ?> />
-								<?php _e( 'Ativo', 'api-sportmonks' ); ?>
-							</label>
-						</td>
-					</tr>
-					<tr>
-						<th scope="row"><?php _e( 'Sincronizar Lesoes', 'api-sportmonks' ); ?></th>
-						<td>
-							<label>
-								<input type="checkbox" name="aps_smonks_sync_injuries" value="1" <?php checked( $sync_injuries, 1 ); ?> />
-								<?php _e( 'Ativo', 'api-sportmonks' ); ?>
-							</label>
-						</td>
-					</tr>
-					<tr>
-						<th scope="row"><?php _e( 'Sincronizar Transferencias', 'api-sportmonks' ); ?></th>
-						<td>
-							<label>
-								<input type="checkbox" name="aps_smonks_sync_transfers" value="1" <?php checked( $sync_transfers, 1 ); ?> />
-								<?php _e( 'Ativo', 'api-sportmonks' ); ?>
-							</label>
-						</td>
-					</tr>
-					<tr>
-						<th scope="row"><?php _e( 'Sincronizar jogos eliminados (API)', 'api-sportmonks' ); ?></th>
-						<td>
-							<label>
-								<input type="checkbox" name="aps_smonks_sync_deleted" value="1" <?php checked( $sync_deleted, 1 ); ?> />
-								<?php _e( 'Ativo', 'api-sportmonks' ); ?>
-							</label>
-							<p class="description">
-								<?php _e( 'Usa o filtro <code>deleted</code> da API para enviar para o lixo os jogos que a Sportmonks removeu, mantendo a base de dados em sincronia.', 'api-sportmonks' ); ?>
-							</p>
-							<p>
-								<label>
-									<?php _e( 'Dias a verificar (eliminados):', 'api-sportmonks' ); ?>
-									<input type="number" name="aps_smonks_sync_deleted_days" value="<?php echo esc_attr( $sync_deleted_days ); ?>" class="small-text" min="1" max="365" />
-								</label>
-							</p>
-						</td>
-					</tr>
-				</table>
+				<section id="aps-section-api" class="aps-settings-section">
+					<h2 class="aps-settings-section-title"><?php _e( '1. Acesso à API', 'api-sportmonks' ); ?></h2>
+					<p class="aps-settings-section-desc">
+						<?php _e( 'O plugin precisa de um token válido para falar com a Sportmonks. Sem este token não é possível sincronizar jogos nem obter dados.', 'api-sportmonks' ); ?>
+					</p>
+					<table class="form-table">
+						<tr>
+							<th scope="row">
+								<label for="aps_smonks_api_token"><?php _e( 'API Token', 'api-sportmonks' ); ?></label>
+							</th>
+							<td>
+								<input type="text" id="aps_smonks_api_token" name="aps_smonks_api_token" value="<?php echo esc_attr( $api_token ); ?>" class="regular-text" autocomplete="off" />
+								<button type="button" id="aps-test-token" class="button"><?php _e( 'Testar Token', 'api-sportmonks' ); ?></button>
+								<p class="description">
+									<?php _e( 'O que fazer: Registe-se em', 'api-sportmonks' ); ?>
+									<a href="https://my.sportmonks.com/" target="_blank" rel="noopener">My.Sportmonks</a>,
+									<?php _e( 'gere um API Token na área da API, copie e cole aqui. Depois clique em «Testar Token» para confirmar que está correto.', 'api-sportmonks' ); ?>
+								</p>
+							</td>
+						</tr>
+					</table>
+				</section>
 
-				<h2><?php _e( 'Cache (TTL em segundos)', 'api-sportmonks' ); ?></h2>
-				<table class="form-table">
-					<tr>
-						<th scope="row"><?php _e( 'Plantel', 'api-sportmonks' ); ?></th>
-						<td><input type="number" name="aps_smonks_cache_ttl_squads" value="<?php echo esc_attr( $ttl_squads ); ?>" class="small-text" /></td>
-					</tr>
-					<tr>
-						<th scope="row"><?php _e( 'Lesoes', 'api-sportmonks' ); ?></th>
-						<td><input type="number" name="aps_smonks_cache_ttl_injuries" value="<?php echo esc_attr( $ttl_injuries ); ?>" class="small-text" /></td>
-					</tr>
-					<tr>
-						<th scope="row"><?php _e( 'Transferencias', 'api-sportmonks' ); ?></th>
-						<td><input type="number" name="aps_smonks_cache_ttl_transfers" value="<?php echo esc_attr( $ttl_transfers ); ?>" class="small-text" /></td>
-					</tr>
-				</table>
-				
-				<h2><?php _e( 'Equipas', 'api-sportmonks' ); ?></h2>
-				<div class="aps-team-search">
-					<label for="aps-team-search"><?php _e( 'Pesquisar equipa por nome', 'api-sportmonks' ); ?></label>
-					<div class="aps-team-search-controls">
-						<input type="text" id="aps-team-search" class="regular-text" placeholder="<?php esc_attr_e( 'Ex: FC Porto', 'api-sportmonks' ); ?>" />
-						<button type="button" id="aps-team-search-button" class="button"><?php _e( 'Pesquisar', 'api-sportmonks' ); ?></button>
-					</div>
-					<div id="aps-team-search-results" class="aps-team-search-results"></div>
-				</div>
-				<div id="aps-teams-list">
-					<?php foreach ( $teams as $index => $team ) : ?>
-						<div class="aps-team-item" data-index="<?php echo esc_attr( $index ); ?>">
-							<table class="form-table">
-								<tr>
-									<th><?php _e( 'Team ID', 'api-sportmonks' ); ?></th>
-									<td>
-										<input type="number" name="teams[<?php echo esc_attr( $index ); ?>][team_id]" value="<?php echo esc_attr( $team['team_id'] ); ?>" class="small-text" />
-									</td>
-								</tr>
-								<tr>
-									<th><?php _e( 'Nome da Equipa', 'api-sportmonks' ); ?></th>
-									<td>
-										<input type="text" name="teams[<?php echo esc_attr( $index ); ?>][team_name]" value="<?php echo esc_attr( $team['team_name'] ); ?>" class="regular-text" />
-									</td>
-								</tr>
-								<tr>
-									<th><?php _e( 'Categoria WordPress', 'api-sportmonks' ); ?></th>
-									<td>
-										<select name="teams[<?php echo esc_attr( $index ); ?>][category_id]" class="aps-category-select">
-											<option value=""><?php _e( '-- Selecionar --', 'api-sportmonks' ); ?></option>
-											<?php foreach ( $categories as $cat ) :
-												$current_team_id = get_term_meta( $cat->term_id, 'aps_team_id', true );
-												$selected = ( (string) $current_team_id === (string) $team['team_id'] ) ? 'selected' : '';
-											?>
-												<option value="<?php echo esc_attr( $cat->term_id ); ?>" <?php echo $selected; ?>>
-													<?php echo esc_html( $cat->name ); ?>
-												</option>
-											<?php endforeach; ?>
-										</select>
-									</td>
-								</tr>
-								<tr>
-									<th></th>
-									<td>
-										<button type="button" class="button button-link-delete aps-remove-team"><?php _e( 'Remover Equipa', 'api-sportmonks' ); ?></button>
-									</td>
-								</tr>
-							</table>
-							<hr>
+				<section id="aps-section-sync" class="aps-settings-section">
+					<h2 class="aps-settings-section-title"><?php _e( '2. Sincronização de jogos', 'api-sportmonks' ); ?></h2>
+					<p class="aps-settings-section-desc">
+						<?php _e( 'Com que frequência o WordPress deve pedir à API os jogos das equipas que configurou. Quanto mais frequente, mais atualizados estarão os resultados e calendários.', 'api-sportmonks' ); ?>
+					</p>
+					<table class="form-table">
+						<tr>
+							<th scope="row">
+								<label for="aps_smonks_sync_frequency"><?php _e( 'Frequência de sincronização', 'api-sportmonks' ); ?></label>
+							</th>
+							<td>
+								<select id="aps_smonks_sync_frequency" name="aps_smonks_sync_frequency">
+									<option value="15min" <?php selected( $sync_frequency, '15min' ); ?>><?php _e( 'A cada 15 minutos', 'api-sportmonks' ); ?></option>
+									<option value="30min" <?php selected( $sync_frequency, '30min' ); ?>><?php _e( 'A cada 30 minutos', 'api-sportmonks' ); ?></option>
+									<option value="hourly" <?php selected( $sync_frequency, 'hourly' ); ?>><?php _e( 'A cada hora', 'api-sportmonks' ); ?></option>
+									<option value="2hours" <?php selected( $sync_frequency, '2hours' ); ?>><?php _e( 'A cada 2 horas', 'api-sportmonks' ); ?></option>
+									<option value="6hours" <?php selected( $sync_frequency, '6hours' ); ?>><?php _e( 'A cada 6 horas', 'api-sportmonks' ); ?></option>
+									<option value="12hours" <?php selected( $sync_frequency, '12hours' ); ?>><?php _e( 'A cada 12 horas', 'api-sportmonks' ); ?></option>
+									<option value="daily" <?php selected( $sync_frequency, 'daily' ); ?>><?php _e( 'Diariamente', 'api-sportmonks' ); ?></option>
+								</select>
+								<p class="description"><?php _e( 'Recomendado: «A cada hora» ou «A cada 30 minutos» para ter resultados e minutos ao vivo atualizados.', 'api-sportmonks' ); ?></p>
+							</td>
+						</tr>
+					</table>
+				</section>
+
+				<section id="aps-section-teams" class="aps-settings-section">
+					<h2 class="aps-settings-section-title"><?php _e( '3. Equipas a sincronizar', 'api-sportmonks' ); ?></h2>
+					<p class="aps-settings-section-desc">
+						<?php _e( 'O que fazer: adicione pelo menos uma equipa (Team ID + nome). Pode pesquisar pelo nome abaixo ou adicionar manualmente. Opcionalmente, associe cada equipa a uma Categoria do WordPress para filtrar conteúdo por equipa.', 'api-sportmonks' ); ?>
+					</p>
+					<ol class="aps-settings-steps">
+						<li><?php _e( 'Use a pesquisa para encontrar a equipa e preencher Team ID e nome, ou clique em «+ Adicionar Equipa» e preencha à mão.', 'api-sportmonks' ); ?></li>
+						<li><?php _e( 'Se quiser, escolha uma Categoria para mapear (ex.: categoria «FC Porto»).', 'api-sportmonks' ); ?></li>
+						<li><?php _e( 'Guarde as configurações e, se for a primeira vez, clique em «Sincronizar Agora» para importar os jogos.', 'api-sportmonks' ); ?></li>
+					</ol>
+					<div class="aps-team-search">
+						<label for="aps-team-search"><?php _e( 'Pesquisar equipa por nome', 'api-sportmonks' ); ?></label>
+						<div class="aps-team-search-controls">
+							<input type="text" id="aps-team-search" class="regular-text" placeholder="<?php esc_attr_e( 'Ex: FC Porto', 'api-sportmonks' ); ?>" />
+							<button type="button" id="aps-team-search-button" class="button"><?php _e( 'Pesquisar', 'api-sportmonks' ); ?></button>
 						</div>
-					<?php endforeach; ?>
-				</div>
-				
-				<p>
-					<button type="button" id="aps-add-team" class="button"><?php _e( '+ Adicionar Equipa', 'api-sportmonks' ); ?></button>
-					<button type="button" id="aps-manual-sync" class="button button-secondary" style="margin-left: 10px;">
-						<?php _e( 'Sincronizar Agora', 'api-sportmonks' ); ?>
-					</button>
-					<span id="aps-sync-status" style="margin-left: 10px;"></span>
+						<div id="aps-team-search-results" class="aps-team-search-results"></div>
+					</div>
+					<div id="aps-teams-list">
+						<?php foreach ( $teams as $index => $team ) : ?>
+							<div class="aps-team-item" data-index="<?php echo esc_attr( $index ); ?>">
+								<table class="form-table">
+									<tr>
+										<th><?php _e( 'Team ID', 'api-sportmonks' ); ?></th>
+										<td>
+											<input type="number" name="teams[<?php echo esc_attr( $index ); ?>][team_id]" value="<?php echo esc_attr( $team['team_id'] ); ?>" class="small-text" />
+											<p class="description"><?php _e( 'ID da equipa na Sportmonks (obtido na pesquisa ou na documentação).', 'api-sportmonks' ); ?></p>
+										</td>
+									</tr>
+									<tr>
+										<th><?php _e( 'Nome da equipa', 'api-sportmonks' ); ?></th>
+										<td>
+											<input type="text" name="teams[<?php echo esc_attr( $index ); ?>][team_name]" value="<?php echo esc_attr( $team['team_name'] ); ?>" class="regular-text" />
+										</td>
+									</tr>
+									<tr>
+										<th><?php _e( 'Categoria WordPress', 'api-sportmonks' ); ?></th>
+										<td>
+											<select name="teams[<?php echo esc_attr( $index ); ?>][category_id]" class="aps-category-select">
+												<option value=""><?php _e( '— Nenhuma / não mapear', 'api-sportmonks' ); ?></option>
+												<?php foreach ( $categories as $cat ) :
+													$current_team_id = get_term_meta( $cat->term_id, 'aps_team_id', true );
+													$selected = ( (string) $current_team_id === (string) $team['team_id'] ) ? 'selected' : '';
+												?>
+													<option value="<?php echo esc_attr( $cat->term_id ); ?>" <?php echo $selected; ?>>
+														<?php echo esc_html( $cat->name ); ?>
+													</option>
+												<?php endforeach; ?>
+											</select>
+											<p class="description"><?php _e( 'Opcional. Liga esta equipa a uma categoria para filtrar jogos no site.', 'api-sportmonks' ); ?></p>
+										</td>
+									</tr>
+									<tr>
+										<th></th>
+										<td>
+											<button type="button" class="button button-link-delete aps-remove-team"><?php _e( 'Remover equipa', 'api-sportmonks' ); ?></button>
+										</td>
+									</tr>
+								</table>
+								<hr>
+							</div>
+						<?php endforeach; ?>
+					</div>
+					<p class="aps-settings-actions">
+						<button type="button" id="aps-add-team" class="button"><?php _e( '+ Adicionar equipa', 'api-sportmonks' ); ?></button>
+						<button type="button" id="aps-manual-sync" class="button button-secondary"><?php _e( 'Sincronizar agora', 'api-sportmonks' ); ?></button>
+						<span id="aps-sync-status" class="aps-sync-status"></span>
+					</p>
+				</section>
+
+				<section id="aps-section-advanced" class="aps-settings-section">
+					<h2 class="aps-settings-section-title"><?php _e( '4. Dados adicionais a sincronizar', 'api-sportmonks' ); ?></h2>
+					<p class="aps-settings-section-desc">
+						<?php _e( 'Para além dos jogos (fixtures), pode sincronizar plantéis, lesões e transferências das equipas configuradas. Ative apenas o que for usar no site (shortcodes, componentes ou tema).', 'api-sportmonks' ); ?>
+					</p>
+				<table class="form-table">
+						<tr>
+							<th scope="row"><?php _e( 'Sincronizar plantel', 'api-sportmonks' ); ?></th>
+							<td>
+								<label>
+									<input type="checkbox" name="aps_smonks_sync_squads" value="1" <?php checked( $sync_squads, 1 ); ?> />
+									<?php _e( 'Ativo', 'api-sportmonks' ); ?>
+								</label>
+								<p class="description"><?php _e( 'Lista de jogadores da equipa (nome, posição, número). Necessário para shortcodes/componentes de plantel.', 'api-sportmonks' ); ?></p>
+							</td>
+						</tr>
+						<tr>
+							<th scope="row"><?php _e( 'Sincronizar lesões', 'api-sportmonks' ); ?></th>
+							<td>
+								<label>
+									<input type="checkbox" name="aps_smonks_sync_injuries" value="1" <?php checked( $sync_injuries, 1 ); ?> />
+									<?php _e( 'Ativo', 'api-sportmonks' ); ?>
+								</label>
+								<p class="description"><?php _e( 'Lesões e suspensões. Necessário para componentes de lesões/suspensões em jogos.', 'api-sportmonks' ); ?></p>
+							</td>
+						</tr>
+						<tr>
+							<th scope="row"><?php _e( 'Sincronizar transferências', 'api-sportmonks' ); ?></th>
+							<td>
+								<label>
+									<input type="checkbox" name="aps_smonks_sync_transfers" value="1" <?php checked( $sync_transfers, 1 ); ?> />
+									<?php _e( 'Ativo', 'api-sportmonks' ); ?>
+								</label>
+								<p class="description"><?php _e( 'Entradas e saídas de jogadores. Necessário para listagens de transferências.', 'api-sportmonks' ); ?></p>
+							</td>
+						</tr>
+					</table>
+				</section>
+
+				<section id="aps-section-deleted" class="aps-settings-section">
+					<h2 class="aps-settings-section-title"><?php _e( '5. Jogos eliminados na API', 'api-sportmonks' ); ?></h2>
+					<p class="aps-settings-section-desc">
+						<?php _e( 'A Sportmonks pode remover jogos da API (ex.: cancelamentos, alterações). Se ativar esta opção, o plugin envia para o lixo os posts de jogos que já não existem na API, mantendo a base de dados alinhada.', 'api-sportmonks' ); ?>
+					</p>
+					<table class="form-table">
+						<tr>
+							<th scope="row"><?php _e( 'Sincronizar jogos eliminados', 'api-sportmonks' ); ?></th>
+							<td>
+								<label>
+									<input type="checkbox" name="aps_smonks_sync_deleted" value="1" <?php checked( $sync_deleted, 1 ); ?> />
+									<?php _e( 'Ativo', 'api-sportmonks' ); ?>
+								</label>
+								<p class="description"><?php _e( 'Usa o filtro <code>deleted</code> da API para enviar para o lixo os jogos que a Sportmonks removeu.', 'api-sportmonks' ); ?></p>
+								<p>
+									<label>
+										<?php _e( 'Dias a verificar (eliminados):', 'api-sportmonks' ); ?>
+										<input type="number" name="aps_smonks_sync_deleted_days" value="<?php echo esc_attr( $sync_deleted_days ); ?>" class="small-text" min="1" max="365" />
+									</label>
+									<span class="description"><?php _e( 'Número de dias atrás a considerar (1–365). Recomendado: 90.', 'api-sportmonks' ); ?></span>
+								</p>
+							</td>
+						</tr>
+					</table>
+				</section>
+
+				<section id="aps-section-cache" class="aps-settings-section">
+					<h2 class="aps-settings-section-title"><?php _e( '6. Cache (avançado)', 'api-sportmonks' ); ?></h2>
+					<p class="aps-settings-section-desc">
+						<?php _e( 'Duração do cache em segundos para dados que não mudam a cada sync (plantéis, lesões, transferências). Só altere se souber o que está a fazer. Valores em segundos.', 'api-sportmonks' ); ?>
+					</p>
+					<table class="form-table">
+						<tr>
+							<th scope="row">
+								<label for="aps_smonks_cache_ttl_squads"><?php _e( 'Plantel (TTL)', 'api-sportmonks' ); ?></label>
+							</th>
+							<td>
+								<input type="number" id="aps_smonks_cache_ttl_squads" name="aps_smonks_cache_ttl_squads" value="<?php echo esc_attr( $ttl_squads ); ?>" class="small-text" min="60" />
+								<span class="description"><?php _e( 'segundos (ex.: 21600 = 6 horas)', 'api-sportmonks' ); ?></span>
+							</td>
+						</tr>
+						<tr>
+							<th scope="row">
+								<label for="aps_smonks_cache_ttl_injuries"><?php _e( 'Lesões (TTL)', 'api-sportmonks' ); ?></label>
+							</th>
+							<td>
+								<input type="number" id="aps_smonks_cache_ttl_injuries" name="aps_smonks_cache_ttl_injuries" value="<?php echo esc_attr( $ttl_injuries ); ?>" class="small-text" min="60" />
+								<span class="description"><?php _e( 'segundos (ex.: 1800 = 30 minutos)', 'api-sportmonks' ); ?></span>
+							</td>
+						</tr>
+						<tr>
+							<th scope="row">
+								<label for="aps_smonks_cache_ttl_transfers"><?php _e( 'Transferências (TTL)', 'api-sportmonks' ); ?></label>
+							</th>
+							<td>
+								<input type="number" id="aps_smonks_cache_ttl_transfers" name="aps_smonks_cache_ttl_transfers" value="<?php echo esc_attr( $ttl_transfers ); ?>" class="small-text" min="60" />
+								<span class="description"><?php _e( 'segundos (ex.: 21600 = 6 horas)', 'api-sportmonks' ); ?></span>
+							</td>
+						</tr>
+					</table>
+				</section>
+
+				<p class="aps-settings-submit">
+					<?php submit_button( __( 'Guardar configurações', 'api-sportmonks' ), 'primary', 'aps_save_settings' ); ?>
 				</p>
-				
-				<?php submit_button( __( 'Guardar Configurações', 'api-sportmonks' ), 'primary', 'aps_save_settings' ); ?>
 			</form>
 		</div>
 		
@@ -457,27 +526,31 @@ class APS_Settings {
 				<table class="form-table">
 					<tr>
 						<th><?php _e( 'Team ID', 'api-sportmonks' ); ?></th>
-						<td><input type="number" name="teams[{{index}}][team_id]" value="" class="small-text" /></td>
+						<td>
+							<input type="number" name="teams[{{index}}][team_id]" value="" class="small-text" />
+							<p class="description"><?php _e( 'ID da equipa na Sportmonks (obtido na pesquisa ou na documentação).', 'api-sportmonks' ); ?></p>
+						</td>
 					</tr>
 					<tr>
-						<th><?php _e( 'Nome da Equipa', 'api-sportmonks' ); ?></th>
+						<th><?php _e( 'Nome da equipa', 'api-sportmonks' ); ?></th>
 						<td><input type="text" name="teams[{{index}}][team_name]" value="" class="regular-text" /></td>
 					</tr>
 					<tr>
 						<th><?php _e( 'Categoria WordPress', 'api-sportmonks' ); ?></th>
 						<td>
 							<select name="teams[{{index}}][category_id]" class="aps-category-select">
-								<option value=""><?php _e( '-- Selecionar --', 'api-sportmonks' ); ?></option>
+								<option value=""><?php _e( '— Nenhuma / não mapear', 'api-sportmonks' ); ?></option>
 								<?php foreach ( $categories as $cat ) : ?>
 									<option value="<?php echo esc_attr( $cat->term_id ); ?>"><?php echo esc_html( $cat->name ); ?></option>
 								<?php endforeach; ?>
 							</select>
+							<p class="description"><?php _e( 'Opcional. Liga esta equipa a uma categoria para filtrar jogos no site.', 'api-sportmonks' ); ?></p>
 						</td>
 					</tr>
 					<tr>
 						<th></th>
 						<td>
-							<button type="button" class="button button-link-delete aps-remove-team"><?php _e( 'Remover Equipa', 'api-sportmonks' ); ?></button>
+							<button type="button" class="button button-link-delete aps-remove-team"><?php _e( 'Remover equipa', 'api-sportmonks' ); ?></button>
 						</td>
 					</tr>
 				</table>
@@ -560,37 +633,46 @@ class APS_Settings {
 		) );
 
 		?>
-		<div class="wrap">
+		<div class="wrap aps-admin-wrap">
 			<h1><?php echo esc_html( get_admin_page_title() ); ?></h1>
-
-			<p>
-				<?php _e( 'Frequência atual:', 'api-sportmonks' ); ?>
-				<strong><?php echo esc_html( $sync_frequency ); ?></strong>
-				&mdash;
-				<a href="<?php echo esc_url( admin_url( 'admin.php?page=aps-sportmonks' ) ); ?>">
-					<?php _e( 'Alterar nas Configurações', 'api-sportmonks' ); ?>
-				</a>
+			<p class="aps-admin-intro">
+				<?php _e( 'Aqui pode executar sincronizações manuais, ver o resultado da última sincronização, erros recentes e a lista de jogos já importados. A frequência automática é definida em Configurações.', 'api-sportmonks' ); ?>
 			</p>
 
-			<h2><?php _e( 'Sincronização Manual', 'api-sportmonks' ); ?></h2>
-			<p>
-				<button type="button" id="aps-manual-sync" class="button button-primary">
-					<?php _e( 'Sincronizar Agora', 'api-sportmonks' ); ?>
-				</button>
-				<span id="aps-sync-status" style="margin-left: 10px;"></span>
-			</p>
+			<section id="aps-sync-section-manual" class="aps-admin-section">
+				<h2 class="aps-admin-section-title"><?php _e( '1. Sincronização manual', 'api-sportmonks' ); ?></h2>
+				<p class="aps-admin-section-desc">
+					<?php _e( 'O que fazer: clique em «Sincronizar agora» para importar ou atualizar todos os jogos das equipas configuradas. Para sincronizar apenas um intervalo de datas, preencha as datas e use «Sincronizar por datas».', 'api-sportmonks' ); ?>
+				</p>
+				<p>
+					<?php _e( 'Frequência automática atual:', 'api-sportmonks' ); ?>
+					<strong><?php echo esc_html( $sync_frequency ); ?></strong>
+					&mdash;
+					<a href="<?php echo esc_url( admin_url( 'admin.php?page=aps-sportmonks' ) ); ?>"><?php _e( 'Alterar nas Configurações', 'api-sportmonks' ); ?></a>
+				</p>
+				<p class="aps-admin-actions">
+					<button type="button" id="aps-manual-sync" class="button button-primary">
+						<?php _e( 'Sincronizar agora', 'api-sportmonks' ); ?>
+					</button>
+					<span id="aps-sync-status" class="aps-sync-status"></span>
+				</p>
+				<p>
+					<label for="aps-sync-date-from"><?php _e( 'De', 'api-sportmonks' ); ?></label>
+					<input type="date" id="aps-sync-date-from" value="" />
+					<label for="aps-sync-date-to"><?php _e( 'a', 'api-sportmonks' ); ?></label>
+					<input type="date" id="aps-sync-date-to" value="" />
+					<button type="button" id="aps-manual-sync-range" class="button">
+						<?php _e( 'Sincronizar por datas', 'api-sportmonks' ); ?>
+					</button>
+					<span id="aps-sync-range-status" class="aps-sync-status"></span>
+				</p>
+			</section>
 
-			<h3><?php _e( 'Sincronizar por datas', 'api-sportmonks' ); ?></h3>
-			<p>
-				<input type="date" id="aps-sync-date-from" value="" />
-				<input type="date" id="aps-sync-date-to" value="" />
-				<button type="button" id="aps-manual-sync-range" class="button">
-					<?php _e( 'Sincronizar por datas', 'api-sportmonks' ); ?>
-				</button>
-				<span id="aps-sync-range-status" style="margin-left: 10px;"></span>
-			</p>
-
-			<h2><?php _e( 'Última Sincronização', 'api-sportmonks' ); ?></h2>
+			<section id="aps-sync-section-last" class="aps-admin-section">
+				<h2 class="aps-admin-section-title"><?php _e( '2. Última sincronização', 'api-sportmonks' ); ?></h2>
+				<p class="aps-admin-section-desc">
+					<?php _e( 'Resumo da última execução (manual ou automática): quando começou e terminou, quantos jogos foram criados ou atualizados e se houve erros.', 'api-sportmonks' ); ?>
+				</p>
 			<table class="widefat striped">
 				<tbody>
 					<tr>
@@ -638,8 +720,13 @@ class APS_Settings {
 					<?php endif; ?>
 				</tbody>
 			</table>
+			</section>
 
-			<h2><?php _e( 'Erros Recentes do Sync', 'api-sportmonks' ); ?></h2>
+			<section id="aps-sync-section-errors" class="aps-admin-section">
+				<h2 class="aps-admin-section-title"><?php _e( '3. Erros recentes do sync', 'api-sportmonks' ); ?></h2>
+				<p class="aps-admin-section-desc">
+					<?php _e( 'Últimos erros registados durante a sincronização. Se aparecerem erros aqui, verifique o token e as equipas em Configurações ou consulte a página Erros do Plugin para mais detalhes.', 'api-sportmonks' ); ?>
+				</p>
 			<?php if ( empty( $error_logs ) ) : ?>
 				<p><?php _e( 'Sem erros recentes.', 'api-sportmonks' ); ?></p>
 			<?php else : ?>
@@ -667,8 +754,13 @@ class APS_Settings {
 					</a>
 				</p>
 			<?php endif; ?>
+			</section>
 
-			<h2><?php _e( 'Jogos sincronizados', 'api-sportmonks' ); ?></h2>
+			<section id="aps-sync-section-games" class="aps-admin-section">
+				<h2 class="aps-admin-section-title"><?php _e( '4. Jogos sincronizados', 'api-sportmonks' ); ?></h2>
+				<p class="aps-admin-section-desc">
+					<?php _e( 'Lista de jogos já importados para o site. Pode filtrar por equipa e por intervalo de datas. Clique no nome do jogo para editar o post.', 'api-sportmonks' ); ?>
+				</p>
 			<form method="get" action="">
 				<input type="hidden" name="page" value="aps-sync-manager" />
 				<select name="aps_team">
@@ -733,6 +825,7 @@ class APS_Settings {
 			}
 			wp_reset_postdata();
 			?>
+			</section>
 		</div>
 		<?php
 	}

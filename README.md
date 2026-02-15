@@ -7,6 +7,7 @@ Plugin WordPress para integração com a API Sportmonks, permitindo sincronizar 
 - **Sincronização Automática**: Sincroniza dados de jogos das equipas configuradas em intervalos configuráveis
 - **Custom Post Type**: Cria posts do tipo "aps_jogo" com dados essenciais dos jogos
 - **Mapeamento de Taxonomias**: Liga IDs das equipas com Categories e IDs das ligas com a taxonomia customizada "aps_competicao"
+- **Painel de administração**: Configurações, Gestão de Sync, Erros do Plugin, Data Explorer e Componentes com secções numeradas, texto de introdução e «O que fazer» em cada página para guiar o administrador. CSS comum (`admin-common.css`) para consistência visual.
 - **Data Explorer**: Interface para explorar dados diretamente da API Sportmonks
 - **Error Logging**: Sistema completo de registo de erros com interface admin
 - **Theme Helpers**: Funções helper para temas obterem dados da API
@@ -163,6 +164,14 @@ $player_stats = aps_get_player_stats( 98765 );
 - Capability checks (apenas utilizadores com `manage_options`)
 - API token armazenado de forma segura
 - Escaping de todos os outputs
+
+## Changelog
+
+### 1.0.3
+- Refatoração das páginas de administração (Configurações, Gestão de Sync, Erros do Plugin, Data Explorer, Componentes): secções numeradas, texto de introdução e «O que fazer» em cada secção. CSS comum `admin-common.css` para consistência visual.
+
+### 1.0.2
+- Minuto ao vivo da API (include `periods`); sem estimativa no cliente. Meta `_aps_elapsed` documentada.
 
 ## Suporte
 

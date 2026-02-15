@@ -73,9 +73,9 @@ class APS_Data_Explorer {
 		if ( 'sportmonks_page_aps-data-explorer' !== $hook ) {
 			return;
 		}
-		
+		wp_enqueue_style( 'aps-admin-common', APS_SMONKS_PLUGIN_URL . 'assets/css/admin-common.css', array(), APS_SMONKS_VERSION );
 		wp_enqueue_script( 'aps-data-explorer', APS_SMONKS_PLUGIN_URL . 'assets/js/data-explorer.js', array( 'jquery' ), APS_SMONKS_VERSION, true );
-		wp_enqueue_style( 'aps-data-explorer', APS_SMONKS_PLUGIN_URL . 'assets/css/data-explorer.css', array(), APS_SMONKS_VERSION );
+		wp_enqueue_style( 'aps-data-explorer', APS_SMONKS_PLUGIN_URL . 'assets/css/data-explorer.css', array( 'aps-admin-common' ), APS_SMONKS_VERSION );
 		
 		wp_localize_script( 'aps-data-explorer', 'apsDataExplorer', array(
 			'ajaxUrl' => admin_url( 'admin-ajax.php' ),
@@ -95,14 +95,20 @@ class APS_Data_Explorer {
 		$teams = get_option( 'aps_smonks_teams', array() );
 		
 		?>
-		<div class="wrap">
+		<div class="wrap aps-admin-wrap">
 			<h1><?php echo esc_html( get_admin_page_title() ); ?></h1>
-			
+			<p class="aps-admin-intro">
+				<?php _e( 'Use esta página para testar a API Sportmonks sem sair do WordPress: carregue dados de uma equipa configurada, experimente os widgets (calendário, plantel, etc.) ou chame endpoints à mão e veja o JSON. Útil para depuração e para confirmar IDs (equipa, jogo, liga).', 'api-sportmonks' ); ?>
+			</p>
+
 			<div class="aps-data-explorer">
-				<div class="aps-explorer-form">
-					<h2><?php _e( 'Equipas Configuradas', 'api-sportmonks' ); ?></h2>
+				<section id="aps-explorer-team-bundle" class="aps-admin-section">
+					<h2 class="aps-admin-section-title"><?php _e( '1. Dados completos de uma equipa', 'api-sportmonks' ); ?></h2>
+					<p class="aps-admin-section-desc">
+						<?php _e( 'O que fazer: selecione uma equipa (das que configurou em Configurações) e clique em «Carregar dados completos». Serão obtidos dados da equipa, fixtures, plantel e lesões. Use para ver a estrutura da resposta ou para copiar JSON.', 'api-sportmonks' ); ?>
+					</p>
 					<?php if ( empty( $teams ) ) : ?>
-						<p><?php _e( 'Ainda nao existem equipas configuradas.', 'api-sportmonks' ); ?></p>
+						<p><?php _e( 'Ainda não existem equipas configuradas. Adicione pelo menos uma em Configurações.', 'api-sportmonks' ); ?></p>
 					<?php else : ?>
 						<div class="aps-team-bundle">
 							<label for="aps-team-bundle-select"><?php _e( 'Selecionar equipa', 'api-sportmonks' ); ?></label>
@@ -135,18 +141,22 @@ class APS_Data_Explorer {
 								<button type="button" class="button aps-copy-section"><?php _e( 'Copiar', 'api-sportmonks' ); ?></button>
 							</div>
 							<div class="aps-bundle-section" data-section="injuries">
-								<h4><?php _e( 'Lesoes', 'api-sportmonks' ); ?></h4>
+								<h4><?php _e( 'Lesões', 'api-sportmonks' ); ?></h4>
 								<pre></pre>
 								<button type="button" class="button aps-copy-section"><?php _e( 'Copiar', 'api-sportmonks' ); ?></button>
 							</div>
 						</div>
 					<?php endif; ?>
-				</div>
-				<div class="aps-explorer-form aps-widget-panel">
-					<h2><?php _e( 'Painel de Widgets', 'api-sportmonks' ); ?></h2>
+				</section>
+
+				<section id="aps-explorer-widgets" class="aps-admin-section aps-widget-panel">
+					<h2 class="aps-admin-section-title"><?php _e( '2. Painel de widgets', 'api-sportmonks' ); ?></h2>
+					<p class="aps-admin-section-desc">
+						<?php _e( 'Teste cada tipo de dados (calendário, próximo jogo, plantel, classificações, etc.) indicando o ID necessário (Team ID, Fixture ID ou League ID) e clicando em «Carregar». A resposta JSON aparece no card.', 'api-sportmonks' ); ?>
+					</p>
 					<div class="aps-widget-grid">
 						<div class="aps-widget-card" data-widget="calendar">
-							<h3><?php _e( 'Calendario & Resultados', 'api-sportmonks' ); ?></h3>
+							<h3><?php _e( 'Calendário e resultados', 'api-sportmonks' ); ?></h3>
 							<label><?php _e( 'Team ID', 'api-sportmonks' ); ?></label>
 							<input type="number" class="aps-widget-team-id" />
 							<label><?php _e( 'Data Inicio', 'api-sportmonks' ); ?></label>
@@ -157,7 +167,7 @@ class APS_Data_Explorer {
 							<pre class="aps-widget-response"></pre>
 						</div>
 						<div class="aps-widget-card" data-widget="next-fixture">
-							<h3><?php _e( 'Proximo Jogo', 'api-sportmonks' ); ?></h3>
+							<h3><?php _e( 'Próximo jogo', 'api-sportmonks' ); ?></h3>
 							<label><?php _e( 'Team ID', 'api-sportmonks' ); ?></label>
 							<input type="number" class="aps-widget-team-id" />
 							<button type="button" class="button aps-fetch-widget" data-action="aps_fetch_widget_next_fixture"><?php _e( 'Carregar', 'api-sportmonks' ); ?></button>
@@ -203,7 +213,7 @@ class APS_Data_Explorer {
 							<pre class="aps-widget-response"></pre>
 						</div>
 						<div class="aps-widget-card" data-widget="standings">
-							<h3><?php _e( 'Classificacoes', 'api-sportmonks' ); ?></h3>
+							<h3><?php _e( 'Classificações', 'api-sportmonks' ); ?></h3>
 							<label><?php _e( 'League ID', 'api-sportmonks' ); ?></label>
 							<input type="number" class="aps-widget-league-id" />
 							<button type="button" class="button aps-fetch-widget" data-action="aps_fetch_widget_standings"><?php _e( 'Carregar', 'api-sportmonks' ); ?></button>
@@ -226,11 +236,13 @@ class APS_Data_Explorer {
 							<pre class="aps-widget-response"></pre>
 						</div>
 					</div>
-				</div>
+				</section>
 
-				<div class="aps-explorer-form">
-					<h2><?php _e( 'Explorar API', 'api-sportmonks' ); ?></h2>
-					
+				<section id="aps-explorer-api" class="aps-admin-section">
+					<h2 class="aps-admin-section-title"><?php _e( '3. Explorar API', 'api-sportmonks' ); ?></h2>
+					<p class="aps-admin-section-desc">
+						<?php _e( 'Chame um endpoint da API manualmente: escolha o endpoint, introduza o ID do recurso (e um segundo ID se for H2H), opcionalmente includes e filtros, e clique em «Obter dados». A resposta aparece em baixo.', 'api-sportmonks' ); ?>
+					</p>
 					<form id="aps-api-form">
 						<table class="form-table">
 							<tr>
@@ -301,12 +313,12 @@ class APS_Data_Explorer {
 							<button type="button" id="aps-copy-response" class="button" style="display: none;"><?php _e( 'Copiar Resposta', 'api-sportmonks' ); ?></button>
 						</p>
 					</form>
-				</div>
-				
-				<div class="aps-explorer-response" id="aps-api-response" style="display: none;">
-					<h2><?php _e( 'Resposta da API', 'api-sportmonks' ); ?></h2>
+				</section>
+
+				<section id="aps-api-response" class="aps-admin-section aps-explorer-response" style="display: none;">
+					<h2 class="aps-admin-section-title"><?php _e( '4. Resposta da API', 'api-sportmonks' ); ?></h2>
 					<pre id="aps-response-content"></pre>
-				</div>
+				</section>
 			</div>
 		</div>
 		<?php
