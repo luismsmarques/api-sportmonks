@@ -273,6 +273,7 @@ class APS_API_Client {
 			'participants',
 			'scores',
 			'state',
+			'periods', // Sportmonks returns current match minute here (minutes, seconds, ticking, time_added)
 			'events',
 			'statistics',
 		);

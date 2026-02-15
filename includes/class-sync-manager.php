@@ -465,7 +465,18 @@ class APS_Sync_Manager {
 			'match_status'    => $fixture_data['state']['name'] ?? ( $fixture_data['state']['short_name'] ?? 'NS' ),
 			'score_home'      => '',
 			'score_away'      => '',
+			'elapsed_minute'  => '',
 		);
+
+		// Elapsed minute (for live): save when API provides it so list/archive can show it
+		$state = $fixture_data['state'] ?? array();
+		if ( isset( $state['minute'] ) && $state['minute'] !== '' && $state['minute'] !== null ) {
+			$data['elapsed_minute'] = (string) (int) $state['minute'];
+		} elseif ( isset( $state['elapsed'] ) && $state['elapsed'] !== '' && $state['elapsed'] !== null ) {
+			$data['elapsed_minute'] = (string) (int) $state['elapsed'];
+		} elseif ( ! empty( $state['elapsed_minute'] ) ) {
+			$data['elapsed_minute'] = (string) (int) $state['elapsed_minute'];
+		}
 		
 		// Extract participants (teams)
 		if ( isset( $fixture_data['participants'] ) && is_array( $fixture_data['participants'] ) ) {
@@ -735,6 +746,9 @@ class APS_Sync_Manager {
 		update_post_meta( $post_id, '_aps_score_home', $match_data['score_home'] );
 		update_post_meta( $post_id, '_aps_score_away', $match_data['score_away'] );
 		update_post_meta( $post_id, '_aps_last_sync', current_time( 'mysql' ) );
+		if ( isset( $match_data['elapsed_minute'] ) && $match_data['elapsed_minute'] !== '' ) {
+			update_post_meta( $post_id, '_aps_elapsed', $match_data['elapsed_minute'] );
+		}
 		
 		// Update title
 		if ( empty( $match_data['team_home_name'] ) || empty( $match_data['team_away_name'] ) ) {

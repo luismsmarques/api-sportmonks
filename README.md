@@ -11,6 +11,7 @@ Plugin WordPress para integração com a API Sportmonks, permitindo sincronizar 
 - **Error Logging**: Sistema completo de registo de erros com interface admin
 - **Theme Helpers**: Funções helper para temas obterem dados da API
 - **Fallback de estádio**: Quando o nome do estádio não vem da API, exibe "O jogo será jogado em casa" ou "O jogo será jogado fora" consoante a equipa da casa ser a equipa principal (ex.: Porto). Plugins de conteúdo (ex.: pre-match/post-match) podem usar `aps_get_match_from_post()` e o campo `venue_display` para o mesmo efeito.
+- **Minuto de jogo ao vivo**: O minuto exibido em jogos ao vivo vem da API Sportmonks (include `periods` e campo `state`), sem estimativa no cliente. O plugin pede `periods` ao obter um fixture; o sync grava o minuto em `_aps_elapsed` quando a API o fornece. Ver [Livescores](https://docs.sportmonks.com/v3/endpoints-and-entities/endpoints/livescores).
 
 ## Requisitos
 
@@ -148,6 +149,7 @@ $player_stats = aps_get_player_stats( 98765 );
 - `_aps_score_away` - Golos equipa visitante
 - `_aps_last_sync` - Timestamp última sincronização
 - `_aps_venue_name` - Nome do estádio (pode estar vazio). Use `aps_get_match_from_post()` para obter `venue_display`, que mostra o estádio ou "O jogo será jogado em casa"/"O jogo será jogado fora" quando o estádio está vazio
+- `_aps_elapsed` - Minuto atual do jogo (ao vivo), preenchido pelo sync a partir de `state.minute`/`state.elapsed` da API. A leitura em tempo real usa o include `periods` no endpoint do fixture.
 
 ### Taxonomias
 

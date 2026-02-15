@@ -9,7 +9,7 @@ Documento de referência com todas as funcionalidades, opções, APIs e possibil
 | Item | Valor |
 |------|--------|
 | **Nome** | API Sportmonks |
-| **Versão** | 1.0.0 |
+| **Versão** | 1.0.2 |
 | **Text Domain** | api-sportmonks |
 | **Requisitos** | WordPress 5.0+, PHP 7.4+, cURL, JSON |
 | **Autor** | Luis Marques (Atlas Invencível) |
@@ -216,7 +216,7 @@ api-sportmonks/
 | `request( $endpoint, $params, $includes, $use_cache )` | Request genérico GET |
 | `get_team( $team_id, $includes, $use_cache )` | Equipa |
 | `get_fixtures( $team_id, $params, $includes, $use_cache )` | Fixtures por equipa |
-| `get_match( $match_id, $params, $includes, $use_cache )` | Um jogo (fixture) |
+| `get_match( $match_id, $params, $includes, $use_cache )` | Um jogo (fixture). Inclui por defeito `periods` para a API devolver o minuto atual em jogos ao vivo (Livescores). |
 | `get_league( $league_id, $includes, $use_cache )` | Liga |
 | `get_league_standings( $league_id, ... )` | Classificação |
 | `get_league_top_scorers( $league_id, $params, $use_cache )` | Melhores marcadores |
@@ -250,7 +250,7 @@ Todas podem devolver `WP_Error` em caso de falha. Os dados vêm normalmente em f
 | Função | Descrição |
 |--------|-----------|
 | `aps_get_match_from_post( $post_id )` | Dados básicos do jogo a partir do post (meta); inclui `venue_name` e `venue_display` — quando o estádio está vazio, "O jogo será jogado em casa" ou "O jogo será jogado fora" consoante `team_home_id` vs equipa principal (ex.: Porto) |
-| `aps_get_match_data( $match_id, $use_cache )` | Fixture da API (includes base) |
+| `aps_get_match_data( $match_id, $use_cache )` | Fixture da API (includes base, incluindo `periods` para minuto ao vivo). O sync grava o minuto em `_aps_elapsed` quando a API fornece `state.minute`/`state.elapsed`. |
 | `aps_get_full_match_details( $match_id )` | Jogo com participants, scores, state, events, statistics, events.type |
 | `aps_get_team_fixtures( $team_id, $params, $includes, $use_cache )` | Fixtures da equipa (params: filters, order, per_page, etc.) |
 | `aps_get_fixtures_by_date_range( $from, $to, $params, $includes, $use_cache )` | Fixtures entre duas datas |

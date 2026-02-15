@@ -20,7 +20,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 }
 
 // Define plugin constants
-define( 'APS_SMONKS_VERSION', '1.0.0' );
+define( 'APS_SMONKS_VERSION', '1.0.2' );
 define( 'APS_SMONKS_PLUGIN_DIR', plugin_dir_path( __FILE__ ) );
 define( 'APS_SMONKS_PLUGIN_URL', plugin_dir_url( __FILE__ ) );
 define( 'APS_SMONKS_PLUGIN_BASENAME', plugin_basename( __FILE__ ) );

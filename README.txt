@@ -5,7 +5,7 @@ Tags: sportmonks, football, soccer, fixtures, api, sync, matches, standings, liv
 Requires at least: 5.0
 Tested up to: 6.4
 Requires PHP: 7.4
-Stable tag: 1.0.1
+Stable tag: 1.0.2
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -25,6 +25,7 @@ O **API Sportmonks** liga o seu site WordPress à API oficial da Sportmonks e ma
 * **Painel de gestão** – Configurações, gestão de sync, explorador de dados da API e registo de erros num menu dedicado (Sportmonks).
 * **Preparado para temas** – Funções helper (aps_get_*) e mapeamento equipas ↔ categorias para integrar nos seus templates.
 * **Fallback de estádio** – Quando o nome do estádio não vem da API, o helper compara a equipa da casa com a equipa principal (ex.: Porto) e exibe "O jogo será jogado em casa" ou "O jogo será jogado fora". Outros plugins (ex.: geradores de conteúdo pre-match/post-match) podem usar aps_get_match_from_post() e o campo venue_display para o mesmo efeito.
+* **Minuto de jogo ao vivo** – O minuto exibido em jogos ao vivo vem da API Sportmonks (include `periods` e campo `state`), sem estimativa no cliente. O plugin pede `periods` ao obter um fixture e o sync grava o minuto em `_aps_elapsed` quando a API o fornece.
 
 = Requisitos =
 
@@ -56,6 +57,10 @@ Em **Sportmonks > Configurações**, na secção Equipas, clique em **+ Adiciona
 Verifique: (1) se o API Token está correto (use **Testar Token** nas Configurações); (2) se adicionou pelo menos uma equipa com Team ID válido; (3) se executou uma sincronização (**Sportmonks > Gestão de Sync > Sincronizar Agora**). Consulte **Sportmonks > Erros do Plugin** para ver mensagens de erro da API ou da sincronização.
 
 == Changelog ==
+
+= 1.0.2 =
+* Minuto ao vivo da API: o plugin passa a pedir o include `periods` ao obter um fixture (get_match), para a Sportmonks devolver o minuto atual do jogo (Livescores). O minuto exibido em jogos ao vivo vem apenas da API (periods ou state) ou do meta _aps_elapsed gravado pelo sync; removida qualquer estimativa de minuto no cliente/tema.
+* Documentação: README atualizado com a funcionalidade de minuto em tempo real.
 
 = 1.0.1 =
 * Melhoria: fallback de estádio (casa/fora) – quando o nome do estádio está vazio (API Sportmonks), o helper usa a equipa principal configurada e devolve "O jogo será jogado em casa" ou "O jogo será jogado fora" consoante team_home_id.
