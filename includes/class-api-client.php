@@ -20,6 +20,11 @@ class APS_API_Client {
 	 * Cache expiration time (seconds)
 	 */
 	const CACHE_EXPIRATION = 300; // 5 minutes
+
+	/**
+	 * Transient name do circuit breaker de rate limit (HTTP 429)
+	 */
+	const RATE_LIMIT_TRANSIENT = 'aps_api_rate_limited';
 	
 	/**
 	 * Instance
@@ -113,10 +118,20 @@ class APS_API_Client {
 			}
 		}
 		
+		// Circuit breaker: se a API devolveu 429 ha pouco, falhar rapido
+		// sem gastar mais quota (so quando nao ha resposta em cache).
+		if ( get_transient( self::RATE_LIMIT_TRANSIENT ) ) {
+			return new WP_Error(
+				'rate_limited',
+				__( 'Sportmonks API rate limit reached. Please try again shortly.', 'api-sportmonks' ),
+				array( 'status' => 429 )
+			);
+		}
+
 		// Build query string
 		$query_string = http_build_query( $params );
 		$full_url = $url . '?' . $query_string;
-		
+
 		// Prepare safe logging values (mask token)
 		$safe_params = $params;
 		if ( isset( $safe_params['api_token'] ) ) {
@@ -127,15 +142,34 @@ class APS_API_Client {
 			$safe_url = str_replace( $this->api_token, '***', $safe_url );
 		}
 
-		// Make request
-		$response = wp_remote_get( $full_url, array(
-			'timeout' => 30,
-			'headers' => array(
-				'Accept'       => 'application/json',
-				'Content-Type' => 'application/json',
-			),
-		) );
-		
+		// Make request. Em contexto cron, 1 retry para falhas transitorias
+		// (rede, 429, 5xx); em pedidos de pagina falha rapido, sem sleep.
+		$max_attempts = wp_doing_cron() ? 2 : 1;
+		$attempt = 0;
+
+		do {
+			$attempt++;
+
+			$response = wp_remote_get( $full_url, array(
+				'timeout' => 30,
+				'headers' => array(
+					'Accept'       => 'application/json',
+					'Content-Type' => 'application/json',
+				),
+			) );
+
+			$is_network_error = is_wp_error( $response );
+			$status_code = $is_network_error ? 0 : (int) wp_remote_retrieve_response_code( $response );
+			$is_transient_failure = $is_network_error || 429 === $status_code || $status_code >= 500;
+
+			if ( $is_transient_failure && $attempt < $max_attempts ) {
+				sleep( 2 );
+				continue;
+			}
+
+			break;
+		} while ( true );
+
 		// Check for errors
 		if ( is_wp_error( $response ) ) {
 			APS_Error_Logger::get_instance()->log(
@@ -148,10 +182,29 @@ class APS_API_Client {
 			);
 			return $response;
 		}
-		
-		$status_code = wp_remote_retrieve_response_code( $response );
+
 		$body = wp_remote_retrieve_body( $response );
-		
+
+		// Rate limit: registar, armar o circuit breaker e devolver erro proprio.
+		if ( 429 === $status_code ) {
+			$retry_after = (int) wp_remote_retrieve_header( $response, 'retry-after' );
+			if ( $retry_after < 1 || $retry_after > 300 ) {
+				$retry_after = 60;
+			}
+			set_transient( self::RATE_LIMIT_TRANSIENT, time(), $retry_after );
+
+			$error_message = __( 'Sportmonks API rate limit reached (HTTP 429).', 'api-sportmonks' );
+			APS_Error_Logger::get_instance()->log(
+				'API_ERROR',
+				$error_message,
+				'RATE_LIMITED',
+				array( 'endpoint' => $endpoint, 'url' => $safe_url, 'retry_after' => $retry_after ),
+				'',
+				array( 'url' => $safe_url, 'params' => $safe_params, 'response' => $body )
+			);
+			return new WP_Error( 'rate_limited', $error_message, array( 'status' => 429 ) );
+		}
+
 		// Check HTTP status
 		if ( $status_code !== 200 ) {
 			$error_message = sprintf( __( 'API request failed with status code %d', 'api-sportmonks' ), $status_code );
@@ -227,30 +280,6 @@ class APS_API_Client {
 	public function get_fixtures( $team_id, $params = array(), $includes = array(), $use_cache = true ) {
 		$default_includes = array( 'participants', 'scores', 'state' );
 		$includes = array_merge( $default_includes, $includes );
-
-		// #region agent log
-		@file_put_contents(
-			'/Users/LuisMarques_1/Local Sites/super-portistas/app/public/wp-content/plugins/api-sportmonks/.cursor/debug.log',
-			wp_json_encode(
-				array(
-					'sessionId' => 'debug-session',
-					'runId' => 'pre-fix',
-					'hypothesisId' => 'H1',
-					'location' => 'class-api-client.php:get_fixtures',
-					'message' => 'get_fixtures params/includes',
-					'data' => array(
-						'team_id' => (int) $team_id,
-						'params_keys' => array_keys( $params ),
-						'filters' => $params['filters'] ?? null,
-						'includes' => $includes,
-						'use_cache' => (bool) $use_cache,
-					),
-					'timestamp' => round( microtime( true ) * 1000 ),
-				)
-			) . PHP_EOL,
-			FILE_APPEND
-		);
-		// #endregion
 		
 		$date_range = $this->get_team_active_season_dates( $team_id );
 		$start_date = $date_range['start'] ?? gmdate( 'Y-m-d', strtotime( '-90 days' ) );

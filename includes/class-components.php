@@ -290,21 +290,29 @@ class APS_Components {
 		$league_id = absint( $_POST['league_id'] ?? 0 );
 		$fixture_id = absint( $_POST['fixture_id'] ?? 0 );
 
-		$response = $this->get_component_data(
-			'competition_standings',
-			array(
-				'season_id' => $season_id,
-				'league_id' => $league_id,
-				'fixture_id' => $fixture_id,
-			)
-		);
+		// Endpoint publico (nopriv): cache por combinacao para nao permitir
+		// esgotar a quota da API Sportmonks com pedidos repetidos.
+		$cache_key = 'aps_standings_ajax_' . md5( $season_id . ':' . $league_id . ':' . $fixture_id );
+		$html = get_transient( $cache_key );
 
-		if ( is_wp_error( $response ) ) {
-			wp_send_json_error( array( 'message' => $response->get_error_message() ) );
+		if ( false === $html ) {
+			$response = $this->get_component_data(
+				'competition_standings',
+				array(
+					'season_id' => $season_id,
+					'league_id' => $league_id,
+					'fixture_id' => $fixture_id,
+				)
+			);
+
+			if ( is_wp_error( $response ) ) {
+				wp_send_json_error( array( 'message' => $response->get_error_message() ) );
+			}
+
+			$data = $response['data'] ?? array();
+			$html = $this->render_competition_table( $data );
+			set_transient( $cache_key, $html, APS_API_Client::CACHE_EXPIRATION );
 		}
-
-		$data = $response['data'] ?? array();
-		$html = $this->render_competition_table( $data );
 
 		wp_send_json_success( array(
 			'html' => $html,

@@ -434,4 +434,4 @@ Scripts são carregados com `APS_SMONKS_VERSION` para cache busting.
 
 ---
 
-*Documento gerado com base no código e documentação existente do plugin API Sportmonks (versão 1.0.0).*
+*Documento gerado com base no código e documentação existente do plugin API Sportmonks (versão 1.0.3).*
