@@ -227,7 +227,11 @@ class APS_Settings {
 		
 		// Handle form submission
 		if ( isset( $_POST['aps_save_settings'] ) && check_admin_referer( 'aps_save_settings' ) ) {
-			update_option( 'aps_smonks_api_token', sanitize_text_field( $_POST['aps_smonks_api_token'] ?? '' ) );
+			// Campo write-only: vazio mantem o token guardado.
+			$posted_token = sanitize_text_field( $_POST['aps_smonks_api_token'] ?? '' );
+			if ( '' !== $posted_token ) {
+				update_option( 'aps_smonks_api_token', $posted_token );
+			}
 			update_option( 'aps_smonks_sync_frequency', sanitize_text_field( $_POST['aps_smonks_sync_frequency'] ?? 'hourly' ) );
 			update_option( 'aps_smonks_sync_squads', $this->sanitize_checkbox( $_POST['aps_smonks_sync_squads'] ?? 0 ) );
 			update_option( 'aps_smonks_sync_injuries', $this->sanitize_checkbox( $_POST['aps_smonks_sync_injuries'] ?? 0 ) );
@@ -306,12 +310,12 @@ class APS_Settings {
 								<label for="aps_smonks_api_token"><?php _e( 'API Token', 'api-sportmonks' ); ?></label>
 							</th>
 							<td>
-								<input type="text" id="aps_smonks_api_token" name="aps_smonks_api_token" value="<?php echo esc_attr( $api_token ); ?>" class="regular-text" autocomplete="off" />
+								<input type="password" id="aps_smonks_api_token" name="aps_smonks_api_token" value="" class="regular-text" autocomplete="new-password" placeholder="<?php echo $api_token ? esc_attr__( '•••••••• (token guardado — deixar vazio para manter)', 'api-sportmonks' ) : ''; ?>" />
 								<button type="button" id="aps-test-token" class="button"><?php _e( 'Testar Token', 'api-sportmonks' ); ?></button>
 								<p class="description">
 									<?php _e( 'O que fazer: Registe-se em', 'api-sportmonks' ); ?>
 									<a href="https://my.sportmonks.com/" target="_blank" rel="noopener">My.Sportmonks</a>,
-									<?php _e( 'gere um API Token na área da API, copie e cole aqui. Depois clique em «Testar Token» para confirmar que está correto.', 'api-sportmonks' ); ?>
+									<?php _e( 'gere um API Token na área da API, copie e cole aqui. Depois clique em «Testar Token» para confirmar que está correto. Por segurança o token guardado não é mostrado; deixar o campo vazio mantém-no.', 'api-sportmonks' ); ?>
 								</p>
 							</td>
 						</tr>
@@ -655,6 +659,10 @@ class APS_Settings {
 						<?php _e( 'Sincronizar agora', 'api-sportmonks' ); ?>
 					</button>
 					<span id="aps-sync-status" class="aps-sync-status"></span>
+					<button type="button" id="aps-clear-api-cache" class="button">
+						<?php _e( 'Limpar cache da API', 'api-sportmonks' ); ?>
+					</button>
+					<span id="aps-clear-cache-status" class="aps-sync-status"></span>
 				</p>
 				<p>
 					<label for="aps-sync-date-from"><?php _e( 'De', 'api-sportmonks' ); ?></label>
@@ -841,7 +849,12 @@ class APS_Settings {
 		}
 		
 		$token = sanitize_text_field( $_POST['token'] ?? '' );
-		
+
+		// Campo write-only: sem input, testa o token guardado.
+		if ( empty( $token ) ) {
+			$token = get_option( 'aps_smonks_api_token', '' );
+		}
+
 		if ( empty( $token ) ) {
 			wp_send_json_error( array( 'message' => __( 'Token não fornecido.', 'api-sportmonks' ) ) );
 		}

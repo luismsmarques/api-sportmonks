@@ -128,8 +128,10 @@ class APS_Theme_Helpers {
 			'events',
 			'statistics',
 			'events.type',
+			'lineups',
+			'lineups.player',
 		);
-		
+
 		$api_client = APS_API_Client::get_instance();
 		return $api_client->get_match( $match_id, array(), $includes, true );
 	}
@@ -196,19 +198,6 @@ class APS_Theme_Helpers {
 	public static function get_fixtures_by_date_range( $from, $to, $params = array(), $includes = array(), $use_cache = true ) {
 		$api_client = APS_API_Client::get_instance();
 		return $api_client->get_fixtures_by_date_range( $from, $to, $params, $includes, $use_cache );
-	}
-
-	/**
-	 * Get livescores
-	 *
-	 * @param array $params Query parameters
-	 * @param array $includes Includes array
-	 * @param bool  $use_cache Use cache
-	 * @return array|WP_Error
-	 */
-	public static function get_livescores( $params = array(), $includes = array(), $use_cache = true ) {
-		$api_client = APS_API_Client::get_instance();
-		return $api_client->get_livescores( $params, $includes, $use_cache );
 	}
 
 	/**
@@ -507,20 +496,6 @@ if ( ! function_exists( 'aps_get_fixtures_by_date_range' ) ) {
 	 */
 	function aps_get_fixtures_by_date_range( $from, $to, $params = array(), $includes = array(), $use_cache = true ) {
 		return APS_Theme_Helpers::get_fixtures_by_date_range( $from, $to, $params, $includes, $use_cache );
-	}
-}
-
-if ( ! function_exists( 'aps_get_livescores' ) ) {
-	/**
-	 * Get livescores
-	 *
-	 * @param array $params Query parameters
-	 * @param array $includes Includes array
-	 * @param bool  $use_cache Use cache
-	 * @return array|WP_Error
-	 */
-	function aps_get_livescores( $params = array(), $includes = array(), $use_cache = true ) {
-		return APS_Theme_Helpers::get_livescores( $params, $includes, $use_cache );
 	}
 }
 

@@ -361,7 +361,7 @@ class APS_Shortcodes {
 		}
 
 		$response = APS_Theme_Helpers::get_head_to_head( absint( $atts['team1_id'] ), absint( $atts['team2_id'] ) );
-		$data = $response['data']['fixtures'] ?? array();
+		$data = is_array( $response ) ? ( $response['data'] ?? array() ) : array();
 
 		ob_start();
 		?>

@@ -600,7 +600,7 @@ class APS_Data_Explorer {
 			}
 
 			$api_client = APS_API_Client::get_instance();
-			return $api_client->get_head_to_head( $team1, $team2, false );
+			return $api_client->get_head_to_head( $team1, $team2, array(), false );
 		} );
 	}
 

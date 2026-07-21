@@ -538,9 +538,9 @@ class APS_Components {
 					return new WP_Error( 'missing_params', __( 'Team 1 ID e Team 2 ID sao obrigatorios.', 'api-sportmonks' ) );
 				}
 
-				$response = $api_client->request(
-					"fixtures/head-to-head/{$team_1_id}/{$team_2_id}",
-					array(),
+				$response = $api_client->get_head_to_head(
+					$team_1_id,
+					$team_2_id,
 					array( 'participants', 'league', 'scores', 'state', 'events' ),
 					false
 				);

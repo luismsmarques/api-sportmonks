@@ -348,26 +348,19 @@ class APS_API_Client {
 	}
 	
 	/**
-	 * Get head to head data
+	 * Get head to head data (API v3: fixtures/head-to-head)
 	 *
-	 * @param int $team1_id Team 1 ID
-	 * @param int $team2_id Team 2 ID
-	 * @return array|WP_Error
-	 */
-	public function get_head_to_head( $team1_id, $team2_id, $use_cache = true ) {
-		return $this->request( "teams/{$team1_id}/h2h/{$team2_id}", array(), array( 'fixtures' ), $use_cache );
-	}
-
-	/**
-	 * Get all fixtures (with filters)
-	 *
-	 * @param array $params Query parameters
+	 * @param int   $team1_id Team 1 ID
+	 * @param int   $team2_id Team 2 ID
 	 * @param array $includes Includes array
 	 * @param bool  $use_cache Use cache
 	 * @return array|WP_Error
 	 */
-	public function get_all_fixtures( $params = array(), $includes = array(), $use_cache = true ) {
-		return $this->request( 'fixtures', $params, $includes, $use_cache );
+	public function get_head_to_head( $team1_id, $team2_id, $includes = array(), $use_cache = true ) {
+		if ( empty( $includes ) ) {
+			$includes = array( 'participants', 'scores', 'state' );
+		}
+		return $this->request( "fixtures/head-to-head/{$team1_id}/{$team2_id}", array(), $includes, $use_cache );
 	}
 
 	/**
@@ -398,42 +391,6 @@ class APS_API_Client {
 	}
 
 	/**
-	 * Get latest updated fixtures
-	 *
-	 * @param array $params Query parameters
-	 * @param array $includes Includes array
-	 * @param bool  $use_cache Use cache
-	 * @return array|WP_Error
-	 */
-	public function get_latest_updated_fixtures( $params = array(), $includes = array(), $use_cache = true ) {
-		return $this->request( 'fixtures/latest', $params, $includes, $use_cache );
-	}
-
-	/**
-	 * Get livescores
-	 *
-	 * @param array $params Query parameters
-	 * @param array $includes Includes array
-	 * @param bool  $use_cache Use cache
-	 * @return array|WP_Error
-	 */
-	public function get_livescores( $params = array(), $includes = array(), $use_cache = true ) {
-		return $this->request( 'livescores', $params, $includes, $use_cache );
-	}
-
-	/**
-	 * Get inplay livescores
-	 *
-	 * @param array $params Query parameters
-	 * @param array $includes Includes array
-	 * @param bool  $use_cache Use cache
-	 * @return array|WP_Error
-	 */
-	public function get_inplay_livescores( $params = array(), $includes = array(), $use_cache = true ) {
-		return $this->request( 'livescores/inplay', $params, $includes, $use_cache );
-	}
-
-	/**
 	 * Get team squad
 	 *
 	 * @param int   $team_id Team ID
@@ -444,19 +401,6 @@ class APS_API_Client {
 	 */
 	public function get_team_squad( $team_id, $params = array(), $includes = array(), $use_cache = true ) {
 		return $this->request( "squads/teams/{$team_id}", $params, $includes, $use_cache );
-	}
-
-	/**
-	 * Get extended team squad
-	 *
-	 * @param int   $team_id Team ID
-	 * @param array $params Query parameters
-	 * @param array $includes Includes array
-	 * @param bool  $use_cache Use cache
-	 * @return array|WP_Error
-	 */
-	public function get_extended_team_squad( $team_id, $params = array(), $includes = array(), $use_cache = true ) {
-		return $this->request( "squads/teams/{$team_id}/extended", $params, $includes, $use_cache );
 	}
 
 	/**
@@ -616,7 +560,7 @@ class APS_API_Client {
 	 */
 	public function clear_all_cache() {
 		global $wpdb;
-		$wpdb->query( "DELETE FROM {$wpdb->options} WHERE option_name LIKE '_transient_aps_api_%' OR option_name LIKE '_transient_timeout_aps_api_%'" );
+		$wpdb->query( "DELETE FROM {$wpdb->options} WHERE option_name LIKE '_transient_aps_api_%' OR option_name LIKE '_transient_timeout_aps_api_%' OR option_name LIKE '_transient_aps_standings_ajax_%' OR option_name LIKE '_transient_timeout_aps_standings_ajax_%'" );
 	}
 }
 
