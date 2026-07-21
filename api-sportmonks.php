@@ -3,7 +3,7 @@
  * Plugin Name: API Sportmonks
  * Plugin URI: https://www.sportmonks.com/
  * Description: Integra o WordPress com a API Sportmonks: sincroniza jogos, resultados, classificações, plantéis, lesões e transferências; cria o CPT Jogo; oferece shortcodes e componentes para calendários, próximos jogos, tabelas e perfis de jogadores; inclui painel de configuração, gestão de sincronização e explorador de dados.
- * Version: 1.0.0
+ * Version: 1.0.3
  * Author: Luis Marques (Atlas Invencível)
  * Author URI: https://atlasinvencivel.pt/
  * Text Domain: api-sportmonks

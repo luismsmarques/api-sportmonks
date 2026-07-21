@@ -413,41 +413,6 @@ class APS_Sync_Manager {
 	 * @return array Extracted data
 	 */
 	private function extract_match_data( $fixture_data ) {
-		// #region agent log
-		@file_put_contents(
-			'/Users/LuisMarques_1/Local Sites/super-portistas/app/public/wp-content/plugins/api-sportmonks/.cursor/debug.log',
-			wp_json_encode(
-				array(
-					'sessionId' => 'debug-session',
-					'runId' => 'pre-fix',
-					'hypothesisId' => 'H2',
-					'location' => 'class-sync-manager.php:extract_match_data',
-					'message' => 'fixture keys and participants',
-					'data' => array(
-						'fixture_id' => $fixture_data['id'] ?? 0,
-						'has_participants' => isset( $fixture_data['participants'] ) && is_array( $fixture_data['participants'] ),
-						'participants_count' => isset( $fixture_data['participants'] ) && is_array( $fixture_data['participants'] ) ? count( $fixture_data['participants'] ) : 0,
-						'participants_meta_positions' => isset( $fixture_data['participants'] ) && is_array( $fixture_data['participants'] )
-							? array_values(
-								array_filter(
-									array_map(
-										function ( $p ) {
-											return $p['meta']['position'] ?? null;
-										},
-										$fixture_data['participants']
-									)
-								)
-							)
-							: array(),
-						'fixture_keys' => array_keys( is_array( $fixture_data ) ? $fixture_data : array() ),
-					),
-					'timestamp' => round( microtime( true ) * 1000 ),
-				)
-			) . PHP_EOL,
-			FILE_APPEND
-		);
-		// #endregion
-
 		$league_obj = $fixture_data['league'] ?? array();
 		$data = array(
 			'match_id'        => $fixture_data['id'] ?? 0,
@@ -480,40 +445,6 @@ class APS_Sync_Manager {
 		
 		// Extract participants (teams)
 		if ( isset( $fixture_data['participants'] ) && is_array( $fixture_data['participants'] ) ) {
-			// #region agent log
-			@file_put_contents(
-				'/Users/LuisMarques_1/Local Sites/super-portistas/app/public/wp-content/plugins/api-sportmonks/.cursor/debug.log',
-				wp_json_encode(
-					array(
-						'sessionId' => 'debug-session',
-						'runId' => 'pre-fix',
-						'hypothesisId' => 'H5',
-						'location' => 'class-sync-manager.php:extract_match_data',
-						'message' => 'participants meta sample',
-						'data' => array(
-							'match_id' => $fixture_data['id'] ?? 0,
-							'participants_sample' => array_slice(
-								array_map(
-									function ( $p ) {
-										return array(
-											'id' => $p['id'] ?? 0,
-											'name' => $p['name'] ?? '',
-											'meta' => $p['meta'] ?? array(),
-										);
-									},
-									$fixture_data['participants']
-								),
-								0,
-								2
-							),
-						),
-						'timestamp' => round( microtime( true ) * 1000 ),
-					)
-				) . PHP_EOL,
-				FILE_APPEND
-			);
-			// #endregion
-
 			foreach ( $fixture_data['participants'] as $participant ) {
 				$meta = $participant['meta'] ?? array();
 				$position = $meta['position'] ?? '';
@@ -537,30 +468,6 @@ class APS_Sync_Manager {
 		}
 
 		if ( empty( $data['team_home_id'] ) || empty( $data['team_away_id'] ) ) {
-			// #region agent log
-			@file_put_contents(
-				'/Users/LuisMarques_1/Local Sites/super-portistas/app/public/wp-content/plugins/api-sportmonks/.cursor/debug.log',
-				wp_json_encode(
-					array(
-						'sessionId' => 'debug-session',
-						'runId' => 'pre-fix',
-						'hypothesisId' => 'H3',
-						'location' => 'class-sync-manager.php:extract_match_data',
-						'message' => 'missing home/away after parsing',
-						'data' => array(
-							'match_id' => $data['match_id'],
-							'home_id' => $data['team_home_id'],
-							'away_id' => $data['team_away_id'],
-							'home_name' => $data['team_home_name'],
-							'away_name' => $data['team_away_name'],
-						),
-						'timestamp' => round( microtime( true ) * 1000 ),
-					)
-				) . PHP_EOL,
-				FILE_APPEND
-			);
-			// #endregion
-
 			APS_Error_Logger::get_instance()->log(
 				'SYNC_ERROR',
 				'Fixture participants missing home/away positions',
@@ -568,34 +475,7 @@ class APS_Sync_Manager {
 				array( 'fixture_id' => $data['match_id'] )
 			);
 		}
-		
-		// #region agent log
-		@file_put_contents(
-			'/Users/LuisMarques_1/Local Sites/super-portistas/app/public/wp-content/plugins/api-sportmonks/.cursor/debug.log',
-			wp_json_encode(
-				array(
-					'sessionId' => 'debug-session',
-					'runId' => 'post-fix',
-					'hypothesisId' => 'H6',
-					'location' => 'class-sync-manager.php:extract_match_data',
-					'message' => 'parsed home/away after location mapping',
-					'data' => array(
-						'match_id' => $data['match_id'],
-						'home_id' => $data['team_home_id'],
-						'away_id' => $data['team_away_id'],
-						'home_name' => $data['team_home_name'],
-						'away_name' => $data['team_away_name'],
-						'participants_count' => isset( $fixture_data['participants'] ) && is_array( $fixture_data['participants'] )
-							? count( $fixture_data['participants'] )
-							: 0,
-					),
-					'timestamp' => round( microtime( true ) * 1000 ),
-				)
-			) . PHP_EOL,
-			FILE_APPEND
-		);
-		// #endregion
-		
+				
 		// Extract scores (API v3: description=CURRENT, score.goals, score.participant; legacy: meta.type=ft)
 		if ( isset( $fixture_data['scores'] ) && is_array( $fixture_data['scores'] ) ) {
 			foreach ( $fixture_data['scores'] as $score ) {
@@ -660,28 +540,6 @@ class APS_Sync_Manager {
 	 */
 	private function create_match_post( $match_data, $team_config, $taxonomy_manager ) {
 		if ( empty( $match_data['team_home_name'] ) || empty( $match_data['team_away_name'] ) ) {
-			// #region agent log
-			@file_put_contents(
-				'/Users/LuisMarques_1/Local Sites/super-portistas/app/public/wp-content/plugins/api-sportmonks/.cursor/debug.log',
-				wp_json_encode(
-					array(
-						'sessionId' => 'debug-session',
-						'runId' => 'pre-fix',
-						'hypothesisId' => 'H4',
-						'location' => 'class-sync-manager.php:create_match_post',
-						'message' => 'missing team names when creating post',
-						'data' => array(
-							'match_id' => $match_data['match_id'] ?? 0,
-							'home_name' => $match_data['team_home_name'] ?? '',
-							'away_name' => $match_data['team_away_name'] ?? '',
-						),
-						'timestamp' => round( microtime( true ) * 1000 ),
-					)
-				) . PHP_EOL,
-				FILE_APPEND
-			);
-			// #endregion
-
 			APS_Error_Logger::get_instance()->log(
 				'SYNC_ERROR',
 				'Cannot create match post without team names',
