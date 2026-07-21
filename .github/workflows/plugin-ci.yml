@@ -1,0 +1,40 @@
+name: Plugin CI
+
+on:
+  push:
+    branches:
+      - main
+      - develop
+  pull_request:
+
+jobs:
+  php-lint:
+    name: PHP Lint
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: "8.2"
+
+      - name: Lint plugin PHP files
+        run: |
+          files=$(git ls-files '*.php' ':!vendor/*')
+          if [ -z "$files" ]; then
+            echo "No PHP files found."
+            exit 0
+          fi
+
+          failed=0
+          for file in $files; do
+            php -l "$file" || failed=1
+          done
+
+          if [ "$failed" -ne 0 ]; then
+            echo "PHP lint failed."
+            exit 1
+          fi
