@@ -38,6 +38,7 @@ class APS_Sync_Manager {
 		add_action( 'wp_ajax_aps_manual_sync', array( $this, 'ajax_manual_sync' ) );
 		add_action( 'wp_ajax_aps_manual_sync_range', array( $this, 'ajax_manual_sync_range' ) );
 		add_action( 'wp_ajax_aps_refresh_match', array( $this, 'ajax_refresh_match' ) );
+		add_action( 'wp_ajax_aps_clear_api_cache', array( $this, 'ajax_clear_api_cache' ) );
 		add_action( 'load-edit.php', array( $this, 'maybe_handle_bulk_refresh' ) );
 	}
 	
@@ -785,6 +786,22 @@ class APS_Sync_Manager {
 		);
 		wp_safe_redirect( remove_query_arg( array( 'action', 'action2', 'post' ), $redirect ) );
 		exit;
+	}
+
+
+	/**
+	 * AJAX: Clear API response cache (transients)
+	 */
+	public function ajax_clear_api_cache() {
+		check_ajax_referer( 'aps_settings_nonce', 'nonce' );
+
+		if ( ! current_user_can( 'manage_options' ) ) {
+			wp_send_json_error( array( 'message' => __( 'Permissão negada.', 'api-sportmonks' ) ) );
+		}
+
+		APS_API_Client::get_instance()->clear_all_cache();
+
+		wp_send_json_success( array( 'message' => __( 'Cache da API limpa.', 'api-sportmonks' ) ) );
 	}
 
 	/**

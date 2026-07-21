@@ -221,14 +221,9 @@ api-sportmonks/
 | `get_league_standings( $league_id, ... )` | Classificação |
 | `get_league_top_scorers( $league_id, $params, $use_cache )` | Melhores marcadores |
 | `get_head_to_head( $team1_id, $team2_id, $use_cache )` | Confronto direto |
-| `get_all_fixtures( $params, $includes, $use_cache )` | Todos os fixtures (params) |
 | `get_fixtures_by_date( $date, ... )` | Fixtures por data |
 | `get_fixtures_by_date_range( $from, $to, ... )` | Fixtures por intervalo |
-| `get_latest_updated_fixtures( $params, ... )` | Últimos atualizados |
-| `get_livescores( $params, ... )` | Livescores |
-| `get_inplay_livescores( $params, ... )` | Em jogo |
 | `get_team_squad( $team_id, ... )` | Plantel |
-| `get_extended_team_squad( $team_id, ... )` | Plantel alargado |
 | `get_injuries( $params, ... )` | Lesões |
 | `get_team_sidelined( $team_id, $use_cache )` | Indisponíveis (equipa) |
 | `get_team_players( $team_id, $use_cache )` | Jogadores da equipa |
@@ -254,7 +249,6 @@ Todas podem devolver `WP_Error` em caso de falha. Os dados vêm normalmente em f
 | `aps_get_full_match_details( $match_id )` | Jogo com participants, scores, state, events, statistics, events.type |
 | `aps_get_team_fixtures( $team_id, $params, $includes, $use_cache )` | Fixtures da equipa (params: filters, order, per_page, etc.) |
 | `aps_get_fixtures_by_date_range( $from, $to, $params, $includes, $use_cache )` | Fixtures entre duas datas |
-| `aps_get_livescores( $params, $includes, $use_cache )` | Livescores |
 | `aps_format_match_status( $status )` | Traduz código de estado (NS, LIVE, HT, FT, etc.) para texto |
 
 ### 9.2 Classificações e Marcadores
@@ -430,7 +424,7 @@ Scripts são carregados com `APS_SMONKS_VERSION` para cache busting.
 2. **Conteúdo:** Inserir shortcodes `[aps_calendar]`, `[aps_standings]`, etc., ou `[aps_component id="..."]` em páginas/posts.
 3. **Sync:** Configurar equipas e frequência; sync manual ou por datas na Gestão de Sync; bulk refresh de jogos; manter jogos eliminados alinhados com a API.
 4. **Debug:** Data Explorer para testar endpoints; Error Log para falhas de API e sync.
-5. **Extensão:** API Client e Theme Helpers cobrem fixtures, equipas, ligas, jogadores, lesões, transferências, H2H, livescores; não há filtros/actions expostos pelo plugin — extensão seria via novas funções que usem o mesmo client/options.
+5. **Extensão:** API Client e Theme Helpers cobrem fixtures, equipas, ligas, jogadores, lesões, transferências, H2H; não há filtros/actions expostos pelo plugin — extensão seria via novas funções que usem o mesmo client/options.
 
 ---
 

@@ -201,6 +201,40 @@ jQuery(document).ready(function($) {
 		});
 	});
 
+	// Clear API cache
+	$('#aps-clear-api-cache').on('click', function() {
+		var $button = $(this);
+		var $status = $('#aps-clear-cache-status');
+
+		$button.prop('disabled', true);
+		$status.html('A limpar...');
+
+		$.ajax({
+			url: apsSettings.ajaxUrl,
+			type: 'POST',
+			data: {
+				action: 'aps_clear_api_cache',
+				nonce: apsSettings.nonce
+			},
+			success: function(response) {
+				if (response.success) {
+					$status.html('<span style="color: green;">' + response.data.message + '</span>');
+				} else {
+					$status.html('<span style="color: red;">Erro: ' + (response.data.message || 'Erro desconhecido') + '</span>');
+				}
+			},
+			error: function() {
+				$status.html('<span style="color: red;">Erro ao limpar cache.</span>');
+			},
+			complete: function() {
+				$button.prop('disabled', false);
+				setTimeout(function() {
+					$status.html('');
+				}, 5000);
+			}
+		});
+	});
+
 	// Manual sync by date range
 	$('#aps-manual-sync-range').on('click', function() {
 		var $button = $(this);
