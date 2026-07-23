@@ -330,7 +330,7 @@ class APS_API_Client {
 	 * @return array|WP_Error
 	 */
 	public function get_league_standings( $league_id, $includes = array(), $use_cache = true ) {
-		$default_includes = array( 'participant' );
+		$default_includes = array( 'participant', 'details' );
 		$includes = array_merge( $default_includes, $includes );
 		
 		return $this->request( "standings/seasons/latest/leagues/{$league_id}", array(), $includes, $use_cache );
@@ -344,7 +344,7 @@ class APS_API_Client {
 	 * @return array|WP_Error
 	 */
 	public function get_league_top_scorers( $league_id, $params = array(), $use_cache = true ) {
-		return $this->request( "topscorers/seasons/latest/leagues/{$league_id}", $params, array(), $use_cache );
+		return $this->request( "topscorers/seasons/latest/leagues/{$league_id}", $params, array( 'player' ), $use_cache );
 	}
 	
 	/**
