@@ -68,6 +68,7 @@ class APS_Sportmonks {
 		require_once APS_SMONKS_PLUGIN_DIR . 'includes/class-settings.php';
 		require_once APS_SMONKS_PLUGIN_DIR . 'includes/class-sync-manager.php';
 		require_once APS_SMONKS_PLUGIN_DIR . 'includes/class-cron-handler.php';
+		require_once APS_SMONKS_PLUGIN_DIR . 'includes/class-live-tick.php';
 		require_once APS_SMONKS_PLUGIN_DIR . 'includes/class-data-explorer.php';
 		require_once APS_SMONKS_PLUGIN_DIR . 'includes/class-theme-helpers.php';
 		require_once APS_SMONKS_PLUGIN_DIR . 'includes/class-shortcodes.php';
@@ -109,6 +110,9 @@ class APS_Sportmonks {
 		if ( $timestamp ) {
 			wp_unschedule_event( $timestamp, 'aps_sportmonks_sync_event' );
 		}
+		if ( class_exists( 'APS_Live_Tick' ) ) {
+			APS_Live_Tick::unschedule();
+		}
 		
 		// Flush rewrite rules
 		flush_rewrite_rules();
@@ -132,6 +136,7 @@ class APS_Sportmonks {
 		APS_Settings::get_instance();
 		APS_Sync_Manager::get_instance();
 		APS_Cron_Handler::get_instance();
+		APS_Live_Tick::get_instance();
 		APS_Data_Explorer::get_instance();
 		APS_Theme_Helpers::get_instance();
 		APS_Shortcodes::get_instance();
