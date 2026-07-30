@@ -408,8 +408,10 @@ class APS_Shortcodes {
 		}
 
 		if ( empty( $data ) ) {
-			$response = APS_Theme_Helpers::get_team_players( $team_id, false );
-			$data = $response['data']['players'] ?? array();
+			// Fallback COM cache do cliente: sem o cron de squads (que se
+			// auto-desliga após 403), isto renderizava sem cache a cada pageview.
+			$response = APS_Theme_Helpers::get_team_players( $team_id, true );
+			$data = is_wp_error( $response ) ? array() : ( $response['data']['players'] ?? array() );
 		} else {
 			$data = $data['data']['players'] ?? $data['data'] ?? array();
 		}
@@ -455,8 +457,9 @@ class APS_Shortcodes {
 		}
 
 		if ( empty( $data ) ) {
-			$response = APS_Theme_Helpers::get_team_sidelined( $team_id, false );
-			$data = $response['data']['sidelined'] ?? $response['data']['sidelineds'] ?? array();
+			// Fallback COM cache do cliente (ver nota no plantel acima).
+			$response = APS_Theme_Helpers::get_team_sidelined( $team_id, true );
+			$data = is_wp_error( $response ) ? array() : ( $response['data']['sidelined'] ?? $response['data']['sidelineds'] ?? array() );
 		} else {
 			$data = $data['data']['sidelined'] ?? $data['data']['sidelineds'] ?? $data['data'] ?? array();
 		}

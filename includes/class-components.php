@@ -332,6 +332,14 @@ class APS_Components {
 			return '<p>' . esc_html__( 'Componente nao encontrado.', 'api-sportmonks' ) . '</p>';
 		}
 
+		// Cache de HTML por args (mesmo padrão do AJAX de standings): o
+		// shortcode é público — sem isto, cada pageview custava pedidos à API.
+		$html_cache_key = 'aps_component_html_' . md5( $component_id . ':' . wp_json_encode( $args ) );
+		$cached_html = get_transient( $html_cache_key );
+		if ( false !== $cached_html ) {
+			return $cached_html;
+		}
+
 		$response = $this->get_component_data( $component_id, $args );
 		if ( is_wp_error( $response ) ) {
 			return '<p>' . esc_html( $response->get_error_message() ) . '</p>';
@@ -341,20 +349,34 @@ class APS_Components {
 
 		switch ( $component_id ) {
 			case 'team_schedule_results':
-				return $this->render_team_schedule_results( $data );
+				$html = $this->render_team_schedule_results( $data );
+				break;
 			case 'competition_standings':
-				return $this->render_competition_standings( $data );
+				$html = $this->render_competition_standings( $data );
+				break;
 			case 'head_to_head':
-				return $this->render_head_to_head( $data );
+				$html = $this->render_head_to_head( $data );
+				break;
 			case 'injuries_suspensions':
-				return $this->render_injuries_suspensions( $data );
+				$html = $this->render_injuries_suspensions( $data );
+				break;
 			case 'team_recent_form':
-				return $this->render_team_recent_form( $data );
+				$html = $this->render_team_recent_form( $data );
+				break;
 			case 'events_timeline':
-				return $this->render_events_timeline( $data );
+				$html = $this->render_events_timeline( $data );
+				break;
 			default:
 				return '<p>' . esc_html__( 'Componente nao encontrado.', 'api-sportmonks' ) . '</p>';
 		}
+
+		/**
+		 * @param int    $ttl          TTL do HTML do componente (segundos).
+		 * @param string $component_id Componente em causa.
+		 */
+		set_transient( $html_cache_key, $html, (int) apply_filters( 'aps_component_html_ttl', 5 * MINUTE_IN_SECONDS, $component_id ) );
+
+		return $html;
 	}
 
 	/**
@@ -387,7 +409,7 @@ class APS_Components {
 						"schedules/seasons/{$season_id}/teams/{$team_id}",
 						array(),
 						array(),
-						false
+						true
 					);
 				}
 
@@ -399,7 +421,7 @@ class APS_Components {
 						"fixtures/between/{$start_date}/{$end_date}/{$team_id}",
 						array(),
 						array( 'participants', 'scores', 'state', 'league' ),
-						false
+						true
 					);
 				}
 
@@ -410,7 +432,7 @@ class APS_Components {
 					"fixtures/between/{$start_date}/{$end_date}/{$team_id}",
 					array(),
 					array( 'participants', 'scores', 'state', 'league' ),
-					false
+					true
 				);
 
 				if ( is_wp_error( $team_response ) ) {
@@ -447,7 +469,7 @@ class APS_Components {
 						"fixtures/{$fixture_id}",
 						array(),
 						array( 'league', 'season' ),
-						false
+						true
 					);
 
 					if ( is_wp_error( $fixture_response ) ) {
@@ -463,7 +485,7 @@ class APS_Components {
 						"leagues/{$league_id}",
 						array(),
 						array( 'seasons' ),
-						false
+						true
 					);
 
 					if ( ! is_wp_error( $league_response ) ) {
@@ -476,7 +498,7 @@ class APS_Components {
 						"standings/seasons/{$season_id}",
 						array(),
 						array( 'participant', 'details' ),
-						false
+						true
 					);
 
 					if ( is_wp_error( $standings ) ) {
@@ -506,7 +528,7 @@ class APS_Components {
 					"standings/seasons/latest/leagues/{$league_id}",
 					array(),
 					array( 'participant', 'details' ),
-					false
+					true
 				);
 
 				if ( is_wp_error( $standings ) ) {
@@ -595,7 +617,7 @@ class APS_Components {
 					"fixtures/{$fixture_id}",
 					array(),
 					$includes,
-					false
+					true
 				);
 
 				if ( is_wp_error( $response ) ) {
@@ -617,7 +639,7 @@ class APS_Components {
 
 				// xgfixture requires higher API plan; omit to avoid 403 – xG section shows only if data exists
 				$includes = array( 'latest', 'latest.statistics', 'latest.participants', 'latest.scores' );
-				$response = $api_client->get_team( $team_id, $includes, false );
+				$response = $api_client->get_team( $team_id, $includes, true );
 
 				if ( is_wp_error( $response ) ) {
 					return $response;
@@ -643,7 +665,7 @@ class APS_Components {
 					"fixtures/{$fixture_id}",
 					array(),
 					$includes,
-					false
+					true
 				);
 
 				if ( is_wp_error( $response ) ) {

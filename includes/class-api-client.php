@@ -17,7 +17,8 @@ class APS_API_Client {
 	const API_BASE_URL = 'https://api.sportmonks.com/v3/football';
 	
 	/**
-	 * Cache expiration time (seconds)
+	 * Cache expiration time (seconds) — default; ver get_cache_ttl() para
+	 * TTL por família de endpoint.
 	 */
 	const CACHE_EXPIRATION = 300; // 5 minutes
 
@@ -25,6 +26,12 @@ class APS_API_Client {
 	 * Transient name do circuit breaker de rate limit (HTTP 429)
 	 */
 	const RATE_LIMIT_TRANSIENT = 'aps_api_rate_limited';
+
+	/**
+	 * Option com o mapa de quota por entidade (remaining/resets_at),
+	 * alimentado pelo rate_limit devolvido em cada resposta da API.
+	 */
+	const ENTITY_QUOTA_OPTION = 'aps_api_entity_quota';
 	
 	/**
 	 * Instance
@@ -66,6 +73,118 @@ class APS_API_Client {
 	 */
 	public function set_api_token( $token ) {
 		$this->api_token = $token;
+	}
+
+	/**
+	 * TTL de cache por família de endpoint (em vez de 300 s para tudo).
+	 *
+	 * @param string $endpoint Endpoint relativo.
+	 * @return int Segundos.
+	 */
+	public function get_cache_ttl( $endpoint ) {
+		$endpoint = ltrim( (string) $endpoint, '/' );
+		$ttl = self::CACHE_EXPIRATION; // fixtures e afins: 5 min.
+		if ( 0 === strpos( $endpoint, 'livescores' ) ) {
+			$ttl = 15;
+		} elseif ( 0 === strpos( $endpoint, 'standings' ) || 0 === strpos( $endpoint, 'topscorers' ) ) {
+			$ttl = HOUR_IN_SECONDS;
+		} elseif ( 0 === strpos( $endpoint, 'squads' ) || 0 === strpos( $endpoint, 'players' ) || 0 === strpos( $endpoint, 'transfers' ) ) {
+			$ttl = 6 * HOUR_IN_SECONDS;
+		} elseif ( 0 === strpos( $endpoint, 'teams' ) || 0 === strpos( $endpoint, 'leagues' ) || 0 === strpos( $endpoint, 'seasons' ) || 0 === strpos( $endpoint, 'venues' ) || 0 === strpos( $endpoint, 'coaches' ) || 0 === strpos( $endpoint, 'referees' ) ) {
+			$ttl = 12 * HOUR_IN_SECONDS;
+		}
+
+		/**
+		 * @param int    $ttl      TTL em segundos.
+		 * @param string $endpoint Endpoint relativo.
+		 */
+		return (int) apply_filters( 'aps_api_cache_ttl', $ttl, $endpoint );
+	}
+
+	/**
+	 * Entidade Sportmonks (balde de quota) de um endpoint.
+	 *
+	 * @param string $endpoint Endpoint relativo.
+	 * @return string Nome da entidade ('' quando desconhecida).
+	 */
+	public static function entity_for_endpoint( $endpoint ) {
+		$endpoint = ltrim( (string) $endpoint, '/' );
+		$map = array(
+			'livescores' => 'Fixture', // /livescores/* conta no balde Fixture.
+			'fixtures'   => 'Fixture',
+			'standings'  => 'Standing',
+			'topscorers' => 'Topscorer',
+			'squads'     => 'Squad',
+			'players'    => 'Player',
+			'teams'      => 'Team',
+			'leagues'    => 'League',
+			'seasons'    => 'Season',
+		);
+		foreach ( $map as $prefix => $entity ) {
+			if ( 0 === strpos( $endpoint, $prefix ) ) {
+				return $entity;
+			}
+		}
+		return '';
+	}
+
+	/**
+	 * Há quota suficiente no balde da entidade para gastar mais um pedido?
+	 *
+	 * Um Fixture esgotado não bloqueia trabalho noutro balde, e um balde
+	 * quase vazio guarda uma reserva para o essencial (live tick).
+	 *
+	 * @param string $entity  Entidade ('' = sem gate).
+	 * @param int    $reserve Pedidos a preservar no balde.
+	 * @return bool
+	 */
+	public function can_make_request( $entity, $reserve = null ) {
+		if ( '' === (string) $entity ) {
+			return true;
+		}
+		if ( null === $reserve ) {
+			/**
+			 * @param int    $reserve Pedidos guardados como reserva por entidade.
+			 * @param string $entity  Entidade em causa.
+			 */
+			$reserve = (int) apply_filters( 'aps_api_quota_reserve', 10, $entity );
+		}
+
+		$quota = get_option( self::ENTITY_QUOTA_OPTION, array() );
+		if ( ! is_array( $quota ) || empty( $quota[ $entity ] ) ) {
+			return true; // sem informação ainda — deixa passar e aprende da resposta.
+		}
+
+		$row = $quota[ $entity ];
+		if ( ! empty( $row['resets_at'] ) && time() >= (int) $row['resets_at'] ) {
+			return true; // janela renovada.
+		}
+
+		return (int) ( $row['remaining'] ?? 0 ) > (int) $reserve;
+	}
+
+	/**
+	 * Regista o rate_limit devolvido pela API no mapa por entidade.
+	 *
+	 * @param array $rate_limit Bloco rate_limit da resposta.
+	 */
+	private function record_rate_limit( $rate_limit ) {
+		if ( empty( $rate_limit ) || ! is_array( $rate_limit ) ) {
+			return;
+		}
+		$entity = (string) ( $rate_limit['requested_entity'] ?? '' );
+		if ( '' === $entity ) {
+			return;
+		}
+		$quota = get_option( self::ENTITY_QUOTA_OPTION, array() );
+		if ( ! is_array( $quota ) ) {
+			$quota = array();
+		}
+		$quota[ $entity ] = array(
+			'remaining' => (int) ( $rate_limit['remaining'] ?? 0 ),
+			'resets_at' => time() + (int) ( $rate_limit['resets_in_seconds'] ?? 0 ),
+		);
+		update_option( self::ENTITY_QUOTA_OPTION, $quota, false );
 	}
 	
 	/**
@@ -116,14 +235,35 @@ class APS_API_Client {
 			if ( false !== $cached ) {
 				return $cached;
 			}
+
+			// Cache negativo no cliente: um endpoint que acabou de falhar não
+			// volta a ser martelado a cada render (1 min em erros, 10 min em 403).
+			if ( get_transient( $cache_key . '_neg' ) ) {
+				return new WP_Error(
+					'aps_negative_cache',
+					__( 'Sportmonks API recently failed for this request; backing off.', 'api-sportmonks' ),
+					array( 'status' => 503 )
+				);
+			}
 		}
-		
+
 		// Circuit breaker: se a API devolveu 429 ha pouco, falhar rapido
 		// sem gastar mais quota (so quando nao ha resposta em cache).
 		if ( get_transient( self::RATE_LIMIT_TRANSIENT ) ) {
 			return new WP_Error(
 				'rate_limited',
 				__( 'Sportmonks API rate limit reached. Please try again shortly.', 'api-sportmonks' ),
+				array( 'status' => 429 )
+			);
+		}
+
+		// Gate de quota por entidade: com o balde desta entidade na reserva,
+		// não gastar — outros baldes continuam livres.
+		$entity = self::entity_for_endpoint( $endpoint );
+		if ( ! $this->can_make_request( $entity ) ) {
+			return new WP_Error(
+				'quota_reserved',
+				sprintf( __( 'Sportmonks quota for entity %s is at reserve level; request skipped.', 'api-sportmonks' ), $entity ),
 				array( 'status' => 429 )
 			);
 		}
@@ -143,7 +283,8 @@ class APS_API_Client {
 		}
 
 		// Make request. Em contexto cron, 1 retry para falhas transitorias
-		// (rede, 429, 5xx); em pedidos de pagina falha rapido, sem sleep.
+		// (rede, 5xx). NUNCA repetir um 429 — cada retry gastava mais quota
+		// da conta inteira; arma-se logo o circuit breaker.
 		$max_attempts = wp_doing_cron() ? 2 : 1;
 		$attempt = 0;
 
@@ -160,7 +301,7 @@ class APS_API_Client {
 
 			$is_network_error = is_wp_error( $response );
 			$status_code = $is_network_error ? 0 : (int) wp_remote_retrieve_response_code( $response );
-			$is_transient_failure = $is_network_error || 429 === $status_code || $status_code >= 500;
+			$is_transient_failure = $is_network_error || $status_code >= 500;
 
 			if ( $is_transient_failure && $attempt < $max_attempts ) {
 				sleep( 2 );
@@ -180,6 +321,7 @@ class APS_API_Client {
 				'',
 				array( 'url' => $safe_url, 'params' => $safe_params )
 			);
+			set_transient( $cache_key . '_neg', 1, MINUTE_IN_SECONDS );
 			return $response;
 		}
 
@@ -216,6 +358,8 @@ class APS_API_Client {
 				'',
 				array( 'url' => $safe_url, 'params' => $safe_params, 'response' => $body )
 			);
+			// 403 = add-on/permissão em falta: não vai mudar no próximo minuto.
+			set_transient( $cache_key . '_neg', 1, 403 === $status_code ? 10 * MINUTE_IN_SECONDS : MINUTE_IN_SECONDS );
 			return new WP_Error( 'api_error', $error_message, array( 'status' => $status_code ) );
 		}
 		
@@ -248,12 +392,75 @@ class APS_API_Client {
 			return new WP_Error( 'api_error', $data['error']['message'] ?? 'Unknown API error' );
 		}
 		
-		// Cache successful response
+		// Regista a quota devolvida (remaining/resets por entidade).
+		$this->record_rate_limit( $data['rate_limit'] ?? array() );
+
+		// Cache successful response (TTL por família de endpoint)
 		if ( $use_cache ) {
-			set_transient( $cache_key, $data, self::CACHE_EXPIRATION );
+			set_transient( $cache_key, $data, $this->get_cache_ttl( $endpoint ) );
 		}
-		
+
 		return $data;
+	}
+
+	/**
+	 * Pedido paginado por has_more/page — a v3 limita per_page a 50 e
+	 * truncava silenciosamente pedidos com per_page maior.
+	 *
+	 * @param string $endpoint  Endpoint relativo.
+	 * @param array  $params    Query parameters.
+	 * @param array  $includes  Includes.
+	 * @param bool   $use_cache Use cache.
+	 * @param int    $max_pages Limite de páginas (backstop de quota).
+	 * @return array|WP_Error Resposta com 'data' agregada de todas as páginas.
+	 */
+	public function request_all_pages( $endpoint, $params = array(), $includes = array(), $use_cache = true, $max_pages = 10 ) {
+		$params['per_page'] = 50; // máximo real da v3.
+		$page      = 1;
+		$all_rows  = array();
+		$last_resp = null;
+		$has_more  = false;
+
+		do {
+			$params['page'] = $page;
+			$response = $this->request( $endpoint, $params, $includes, $use_cache );
+
+			if ( is_wp_error( $response ) ) {
+				if ( 1 === $page ) {
+					return $response;
+				}
+				// Falha a meio: devolve o que há, mas nunca em silêncio.
+				APS_Error_Logger::get_instance()->log(
+					'API_WARNING',
+					sprintf( 'Paginated request failed at page %d of %s; returning partial data.', $page, $endpoint ),
+					'PAGINATION_PARTIAL',
+					array( 'endpoint' => $endpoint, 'page' => $page )
+				);
+				break;
+			}
+
+			$last_resp = $response;
+			$rows      = isset( $response['data'] ) && is_array( $response['data'] ) ? $response['data'] : array();
+			$all_rows  = array_merge( $all_rows, $rows );
+			$has_more  = ! empty( $response['pagination']['has_more'] );
+			$page++;
+		} while ( $has_more && $page <= $max_pages );
+
+		if ( $has_more ) {
+			APS_Error_Logger::get_instance()->log(
+				'API_WARNING',
+				sprintf( 'Paginated request truncated at %d pages for %s (has_more=true).', $max_pages, $endpoint ),
+				'PAGINATION_TRUNCATED',
+				array( 'endpoint' => $endpoint, 'max_pages' => $max_pages )
+			);
+		}
+
+		if ( null === $last_resp ) {
+			return array( 'data' => $all_rows );
+		}
+
+		$last_resp['data'] = $all_rows;
+		return $last_resp;
 	}
 	
 	/**
@@ -280,12 +487,14 @@ class APS_API_Client {
 	public function get_fixtures( $team_id, $params = array(), $includes = array(), $use_cache = true ) {
 		$default_includes = array( 'participants', 'scores', 'state' );
 		$includes = array_merge( $default_includes, $includes );
-		
+
 		$date_range = $this->get_team_active_season_dates( $team_id );
 		$start_date = $date_range['start'] ?? gmdate( 'Y-m-d', strtotime( '-90 days' ) );
 		$end_date = $date_range['end'] ?? gmdate( 'Y-m-d', strtotime( '+90 days' ) );
-		
-		return $this->request( "fixtures/between/{$start_date}/{$end_date}/{$team_id}", $params, $includes, $use_cache );
+
+		// Paginado: a v3 limita per_page a 50 — o antigo per_page=1000 era
+		// truncado em silêncio e épocas completas ficavam sem jogos.
+		return $this->request_all_pages( "fixtures/between/{$start_date}/{$end_date}/{$team_id}", $params, $includes, $use_cache );
 	}
 	
 	/**

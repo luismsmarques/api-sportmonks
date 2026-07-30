@@ -202,8 +202,17 @@ class APS_Sync_Manager {
 	 * @return int Number of posts trashed
 	 */
 	private function sync_deleted_fixtures( $api_client ) {
-		$days = absint( get_option( 'aps_smonks_sync_deleted_days', 90 ) );
-		$days = $days > 0 ? min( $days, 365 ) : 90;
+		// Rate limit: isto custa 1 pedido Fixture POR DIA da janela — com o
+		// default antigo (90 dias) eram ~91 pedidos por execução do sync.
+		// Passa a correr no máximo 1×/dia e com janela default de 14 dias.
+		$last_run = (int) get_option( 'aps_smonks_deleted_sync_last_run', 0 );
+		if ( $last_run && ( time() - $last_run ) < DAY_IN_SECONDS ) {
+			return 0;
+		}
+		update_option( 'aps_smonks_deleted_sync_last_run', time(), false );
+
+		$days = absint( get_option( 'aps_smonks_sync_deleted_days', 14 ) );
+		$days = $days > 0 ? min( $days, 90 ) : 14;
 		$start = strtotime( "-{$days} days", time() );
 		$end = time();
 		$trashed = 0;
@@ -868,9 +877,9 @@ class APS_Sync_Manager {
 				continue;
 			}
 
-			$response = $api_client->request(
+			$response = $api_client->request_all_pages(
 				"fixtures/between/{$date_from}/{$date_to}/{$team_id}",
-				array( 'per_page' => 1000 ),
+				array(),
 				array( 'participants', 'scores', 'state', 'league' ),
 				false
 			);
