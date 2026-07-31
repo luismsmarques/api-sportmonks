@@ -261,8 +261,8 @@ class APS_Data_Explorer {
 										</optgroup>
 										<optgroup label="<?php _e( 'Ligas', 'api-sportmonks' ); ?>">
 											<option value="leagues/{id}"><?php _e( 'Dados da Liga', 'api-sportmonks' ); ?></option>
-											<option value="standings/seasons/latest/leagues/{id}"><?php _e( 'Classificação', 'api-sportmonks' ); ?></option>
-											<option value="topscorers/seasons/latest/leagues/{id}"><?php _e( 'Top Marcadores', 'api-sportmonks' ); ?></option>
+											<option value="standings/seasons/{id}"><?php _e( 'Classificação (ID = season)', 'api-sportmonks' ); ?></option>
+											<option value="topscorers/seasons/{id}"><?php _e( 'Top Marcadores (ID = season)', 'api-sportmonks' ); ?></option>
 										</optgroup>
 										<optgroup label="<?php _e( 'Head to Head', 'api-sportmonks' ); ?>">
 											<option value="teams/{id}/h2h/{id2}"><?php _e( 'Histórico entre Equipas', 'api-sportmonks' ); ?></option>
