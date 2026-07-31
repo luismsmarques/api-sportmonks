@@ -32,7 +32,20 @@ class APS_API_Client {
 	 * alimentado pelo rate_limit devolvido em cada resposta da API.
 	 */
 	const ENTITY_QUOTA_OPTION = 'aps_api_entity_quota';
-	
+
+	/**
+	 * Registry liga → época atual (a v3 não tem standings/topscorers por liga).
+	 * Em option porque muda uma vez por época; TTL só para apanhar a viragem.
+	 */
+	const SEASON_REGISTRY_OPTION = 'aps_league_season_registry';
+	const SEASON_REGISTRY_TTL    = 12 * HOUR_IN_SECONDS;
+
+	/**
+	 * seasontopscorerTypes: 208 = golos, 209 = assistências.
+	 */
+	const TOPSCORER_TYPE_GOALS   = 208;
+	const TOPSCORER_TYPE_ASSISTS = 209;
+
 	/**
 	 * Instance
 	 *
@@ -532,28 +545,141 @@ class APS_API_Client {
 	}
 	
 	/**
+	 * Época atual de uma liga (a v3 não tem standings/topscorers por liga).
+	 *
+	 * Resolve via `leagues/{id}?include=currentSeason` e guarda num registry
+	 * em option — o season_id muda uma vez por época, não faz sentido pagar
+	 * um pedido por render.
+	 *
+	 * @param int  $league_id League ID.
+	 * @param bool $use_cache Usar cache do cliente na resolução.
+	 * @return int 0 quando não é resolúvel.
+	 */
+	public function get_league_current_season_id( $league_id, $use_cache = true ) {
+		$league_id = (int) $league_id;
+		if ( ! $league_id ) {
+			return 0;
+		}
+
+		$registry = get_option( self::SEASON_REGISTRY_OPTION, array() );
+		$registry = is_array( $registry ) ? $registry : array();
+		$entry    = isset( $registry[ $league_id ] ) && is_array( $registry[ $league_id ] ) ? $registry[ $league_id ] : null;
+
+		if ( $entry && ! empty( $entry['season_id'] ) && ! empty( $entry['checked_at'] )
+			&& ( time() - (int) $entry['checked_at'] ) < self::SEASON_REGISTRY_TTL ) {
+			return (int) $entry['season_id'];
+		}
+
+		$response = $this->request( "leagues/{$league_id}", array(), array( 'currentSeason' ), $use_cache );
+		if ( is_wp_error( $response ) ) {
+			// Falha de rede/quota não pode deitar fora um season_id já conhecido.
+			return $entry ? (int) ( $entry['season_id'] ?? 0 ) : 0;
+		}
+
+		$season_id = (int) ( $response['data']['currentSeason']['id'] ?? 0 );
+		if ( ! $season_id ) {
+			return $entry ? (int) ( $entry['season_id'] ?? 0 ) : 0;
+		}
+
+		$registry[ $league_id ] = array(
+			'season_id'  => $season_id,
+			'checked_at' => time(),
+		);
+		update_option( self::SEASON_REGISTRY_OPTION, $registry, false );
+
+		return $season_id;
+	}
+
+	/**
+	 * Classificação de uma época (caminho correto da v3).
+	 *
+	 * @param int   $season_id Season ID.
+	 * @param array $includes  Includes extra — SOMADOS aos defaults, nunca a substituí-los.
+	 * @param bool  $use_cache Usar cache.
+	 * @return array|WP_Error
+	 */
+	public function get_season_standings( $season_id, $includes = array(), $use_cache = true ) {
+		$season_id = (int) $season_id;
+		if ( ! $season_id ) {
+			return new WP_Error( 'aps_no_season', __( 'Season ID em falta para a classificação.', 'api-sportmonks' ) );
+		}
+
+		// Somar, nunca substituir: sem `participant` a tabela perde o nome da
+		// equipa; sem `details` os números (J/V/E/D/golos) vêm todos a zero.
+		$includes = array_values( array_unique( array_merge( array( 'participant', 'details', 'form' ), (array) $includes ) ) );
+
+		return $this->request( "standings/seasons/{$season_id}", array(), $includes, $use_cache );
+	}
+
+	/**
+	 * Melhores marcadores/assistentes de uma época (caminho correto da v3).
+	 *
+	 * @param int   $season_id Season ID.
+	 * @param array $params    Query params (per_page, filters…).
+	 * @param array $includes  Includes extra (somados aos defaults).
+	 * @param bool  $use_cache Usar cache.
+	 * @return array|WP_Error
+	 */
+	public function get_season_topscorers( $season_id, $params = array(), $includes = array(), $use_cache = true ) {
+		$season_id = (int) $season_id;
+		if ( ! $season_id ) {
+			return new WP_Error( 'aps_no_season', __( 'Season ID em falta para os marcadores.', 'api-sportmonks' ) );
+		}
+
+		$includes = array_values( array_unique( array_merge( array( 'player', 'participant', 'type' ), (array) $includes ) ) );
+
+		// Sem filtro vêm golos e assistências misturados na mesma lista.
+		if ( ! isset( $params['filters'] ) ) {
+			$params['filters'] = 'seasontopscorerTypes:' . self::TOPSCORER_TYPE_GOALS;
+		}
+
+		return $this->request( "topscorers/seasons/{$season_id}", $params, $includes, $use_cache );
+	}
+
+	/**
 	 * Get league standings
+	 *
+	 * A v3 NÃO tem classificação por liga: resolve-se a época atual e pede-se
+	 * `standings/seasons/{season_id}`. O caminho antigo
+	 * (`standings/seasons/latest/leagues/{id}`) não existe na v3 e devolvia
+	 * 404 — era essa a causa da tabela vazia, não os includes em falta.
 	 *
 	 * @param int   $league_id League ID
 	 * @param array $includes Includes array
 	 * @return array|WP_Error
 	 */
 	public function get_league_standings( $league_id, $includes = array(), $use_cache = true ) {
-		$default_includes = array( 'participant' );
-		$includes = array_merge( $default_includes, $includes );
-		
-		return $this->request( "standings/seasons/latest/leagues/{$league_id}", array(), $includes, $use_cache );
+		$season_id = $this->get_league_current_season_id( $league_id, $use_cache );
+		if ( ! $season_id ) {
+			return new WP_Error(
+				'aps_no_season',
+				__( 'Sem season_id para esta liga — sincroniza as ligas primeiro.', 'api-sportmonks' )
+			);
+		}
+
+		return $this->get_season_standings( $season_id, $includes, $use_cache );
 	}
-	
+
 	/**
 	 * Get league top scorers
+	 *
+	 * Mesma correção da classificação: resolve a época e usa
+	 * `topscorers/seasons/{season_id}`.
 	 *
 	 * @param int   $league_id League ID
 	 * @param array $params Query parameters
 	 * @return array|WP_Error
 	 */
 	public function get_league_top_scorers( $league_id, $params = array(), $use_cache = true ) {
-		return $this->request( "topscorers/seasons/latest/leagues/{$league_id}", $params, array(), $use_cache );
+		$season_id = $this->get_league_current_season_id( $league_id, $use_cache );
+		if ( ! $season_id ) {
+			return new WP_Error(
+				'aps_no_season',
+				__( 'Sem season_id para esta liga — sincroniza as ligas primeiro.', 'api-sportmonks' )
+			);
+		}
+
+		return $this->get_season_topscorers( $season_id, $params, array(), $use_cache );
 	}
 	
 	/**

@@ -524,12 +524,10 @@ class APS_Components {
 					return new WP_Error( 'missing_params', __( 'League ID nao encontrado.', 'api-sportmonks' ) );
 				}
 
-				$standings = $api_client->request(
-					"standings/seasons/latest/leagues/{$league_id}",
-					array(),
-					array( 'participant', 'details' ),
-					true
-				);
+				// A v3 não tem classificação por liga: resolver a época atual e
+				// usar o caminho por época. O antigo `seasons/latest/leagues/{id}`
+				// não existe e devolvia 404 (tabela vazia).
+				$standings = $api_client->get_league_standings( $league_id );
 
 				if ( is_wp_error( $standings ) ) {
 					return $standings;
